@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>KwitansiPro</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;background:#f5f5f7;color:#111;}
+:root{--accent:#534AB7;--accent-light:#EEEDFE;--accent-dark:#3C3489;--border:rgba(0,0,0,0.1);--card:#fff;--muted:#888;--danger:#c0392b;--danger-bg:#fdf0ef;}
+.shell{display:flex;height:100vh;overflow:hidden;}
+.sidebar{width:200px;background:var(--accent);color:#fff;display:flex;flex-direction:column;flex-shrink:0;}
+.sidebar-logo{padding:16px 14px 12px;border-bottom:1px solid rgba(255,255,255,0.15);}
+.sidebar-logo .app-name{font-size:15px;font-weight:600;letter-spacing:0.3px;}
+.sidebar-logo .app-sub{font-size:10px;opacity:0.7;margin-top:2px;}
+.sidebar-user{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.15);cursor:pointer;}
+.sidebar-user .u-label{font-size:10px;opacity:0.6;margin-bottom:2px;}
+.sidebar-user .u-name{font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:space-between;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:13px;cursor:pointer;opacity:0.75;border:none;background:none;color:#fff;width:100%;text-align:left;}
+.nav-item:hover{background:rgba(255,255,255,0.1);opacity:1;}
+.nav-item.active{background:rgba(255,255,255,0.18);opacity:1;font-weight:500;}
+.nav-item i{font-size:16px;width:18px;flex-shrink:0;}
+.nav-section{padding:8px 14px 4px;font-size:10px;opacity:0.5;letter-spacing:0.5px;text-transform:uppercase;margin-top:4px;}
+.sidebar-bottom{margin-top:auto;padding:10px 14px;border-top:1px solid rgba(255,255,255,0.15);font-size:10px;opacity:0.4;}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
+.topbar{background:#fff;border-bottom:0.5px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:16px;font-weight:500;}
+.content{padding:20px;flex:1;}
+.card{background:#fff;border:0.5px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:14px;}
+.card-title{font-size:11px;color:var(--muted);font-weight:500;letter-spacing:0.4px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.fg{display:flex;flex-direction:column;margin-bottom:10px;}
+.fg:last-child{margin-bottom:0;}
+label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
+input,textarea,select{width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;background:#fff;color:#111;outline:none;}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(83,74,183,0.12);}
+input[readonly]{background:#f9f9f9;cursor:default;}
+textarea{resize:vertical;min-height:52px;}
+.hint{font-size:11px;color:var(--muted);margin-top:3px;}
+.mono{font-family:monospace;font-size:12px;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:13px;cursor:pointer;border:none;font-family:inherit;font-weight:500;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-dark);}
+.btn-outline{background:transparent;border:0.5px solid var(--border);color:#111;}
+.btn-outline:hover{background:#f0f0f0;}
+.btn-ghost{background:transparent;border:none;color:var(--muted);padding:6px 8px;}
+.btn-ghost:hover{background:#f0f0f0;color:#111;}
+.btn-danger{background:transparent;border:0.5px solid var(--danger);color:var(--danger);padding:4px 10px;font-size:12px;border-radius:6px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px;}
+.btn-danger:hover{background:var(--danger-bg);}
+.btn-sm{padding:5px 11px;font-size:12px;}
+.btn-xs{padding:3px 8px;font-size:11px;border-radius:5px;}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.stat-card{background:#fff;border:0.5px solid var(--border);border-radius:10px;padding:14px 16px;}
+.stat-label{font-size:11px;color:var(--muted);margin-bottom:4px;}
+.stat-val{font-size:18px;font-weight:600;color:var(--accent);}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;}
+.badge-purple{background:var(--accent-light);color:var(--accent);}
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{font-size:11px;color:var(--muted);font-weight:500;text-align:left;padding:8px 10px;border-bottom:0.5px solid var(--border);white-space:nowrap;}
+.tbl td{font-size:13px;padding:9px 10px;border-bottom:0.5px solid var(--border);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:#fafafa;}
+.preview-box{background:#fff;border:0.5px solid var(--border);border-radius:10px;padding:16px;}
+.kop-line{border-bottom:2px solid var(--accent);padding-bottom:10px;margin-bottom:12px;}
+.receipt-title{font-size:20px;font-weight:600;color:var(--accent);}
+.receipt-no{font-size:10px;color:var(--muted);font-family:monospace;margin-top:2px;}
+.r-row{display:flex;margin-bottom:7px;}
+.r-lbl{width:140px;font-size:12px;color:var(--muted);flex-shrink:0;}
+.r-val{font-size:12px;flex:1;}
+.amt-box{background:#f5f5f7;border-radius:8px;padding:10px 12px;margin:10px 0;}
+.amt-val{font-size:18px;font-weight:600;color:var(--accent);}
+.amt-words{font-size:10px;color:var(--muted);font-style:italic;margin-top:2px;}
+.sig-area{display:flex;justify-content:flex-end;margin-top:14px;}
+.sig-line{width:120px;border-bottom:0.5px solid #ccc;margin:28px auto 3px;}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;}
+.modal{background:#fff;border-radius:12px;padding:20px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.user-opt{display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:6px;}
+.user-opt:hover,.user-opt.active-user{border-color:var(--accent);background:var(--accent-light);}
+.user-avatar{width:32px;height:32px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
+.uname{font-size:13px;font-weight:500;}
+.urole{font-size:11px;color:var(--muted);}
+.cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.cat-chip{padding:4px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:0.5px solid var(--border);background:transparent;}
+.cat-chip.selected{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
+.chart-wrap{display:flex;align-items:flex-end;gap:6px;height:100px;padding-top:8px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.bar{width:100%;border-radius:4px 4px 0 0;min-height:3px;}
+.bar-label{font-size:9px;color:var(--muted);}
+.bar-val{font-size:9px;color:var(--accent);font-weight:500;}
+.logo-area{border:1.5px dashed var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.logo-box{width:52px;height:52px;border-radius:8px;border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;background:#f5f5f7;}
+.logo-box img{width:100%;height:100%;object-fit:contain;}
+.btn-upload{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:6px;font-size:12px;cursor:pointer;background:var(--accent);color:#fff;border:none;font-family:inherit;}
+#file-input{display:none;}
+.size-opts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px;}
+.size-opt{border:0.5px solid var(--border);border-radius:8px;padding:8px 6px;cursor:pointer;text-align:center;}
+.size-opt.active{border-color:var(--accent);background:var(--accent-light);}
+.sname{font-size:12px;font-weight:500;}
+.sdesc{font-size:10px;color:var(--muted);margin-top:2px;}
+.month-selector{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.month-selector select{width:auto;flex-shrink:0;}
+.cat-summary{display:flex;flex-direction:column;gap:4px;}
+.cat-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border);}
+.cat-row:last-child{border-bottom:none;}
+.cat-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.cat-name{flex:1;font-size:13px;}
+.cat-count{font-size:11px;color:var(--muted);margin-right:8px;}
+.cat-amt{font-size:13px;font-weight:500;color:var(--accent);}
+.progress-bar{height:4px;border-radius:2px;background:var(--accent-light);margin-top:2px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:2px;}
+.search-wrap{position:relative;margin-bottom:12px;}
+.search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;pointer-events:none;}
+.search-wrap input{padding-left:32px;}
+.no-prev{display:flex;align-items:center;gap:8px;background:#f5f5f7;border-radius:6px;padding:7px 10px;margin-top:8px;}
+.no-prev-label{font-size:11px;color:var(--muted);}
+.no-prev-val{font-size:12px;font-weight:500;color:var(--accent);font-family:monospace;}
+.toast{position:fixed;bottom:16px;right:16px;background:#222;color:#fff;padding:9px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity 0.25s;pointer-events:none;z-index:2000;}
+.toast.show{opacity:1;}
+.panel{display:none;}
+.panel.active{display:block;}
+/* LOGIN SCREEN */
+#login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#3C3489 0%,#534AB7 60%,#7B6FD4 100%);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;}
+#login-screen.hidden{display:none;}
+.login-box{background:#fff;border-radius:16px;padding:32px 28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.25);}
+.login-logo{text-align:center;margin-bottom:24px;}
+.login-logo .app-icon{width:56px;height:56px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:26px;color:#fff;}
+.login-logo h1{font-size:20px;font-weight:700;color:#111;}
+.login-logo p{font-size:12px;color:var(--muted);margin-top:3px;}
+.login-user-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.login-user-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;border:0.5px solid var(--border);border-radius:10px;cursor:pointer;background:#fff;width:100%;text-align:left;transition:border-color 0.15s,background 0.15s;}
+.login-user-btn:hover{border-color:var(--accent);background:var(--accent-light);}
+.login-user-btn.selected{border-color:var(--accent);background:var(--accent-light);}
+.login-user-btn .avatar{width:36px;height:36px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;}
+.login-user-btn .uinfo{flex:1;}
+.login-user-btn .uinfo .un{font-size:13px;font-weight:600;color:#111;}
+.login-user-btn .uinfo .ur{font-size:11px;color:var(--muted);}
+.login-user-btn .lock-icon{font-size:14px;color:var(--muted);}
+.pw-field{position:relative;margin-bottom:12px;}
+.pw-field input{padding-right:36px;}
+.pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:0;}
+.login-err{font-size:12px;color:var(--danger);margin-bottom:8px;display:none;}
+.login-err.show{display:block;}
+.save-indicator{font-size:11px;color:#1a7a45;display:inline-flex;align-items:center;gap:4px;opacity:0;transition:opacity 0.3s;}
+.save-indicator.show{opacity:1;}
+/* Password field in settings */
+.pw-set-row{display:flex;gap:8px;align-items:flex-end;}
+.pw-set-row .fg{flex:1;margin-bottom:0;}
+/* Signature pad */
+.sign-pad-wrap{position:relative;border:1.5px dashed var(--border);border-radius:10px;background:#fff;overflow:hidden;touch-action:none;}
+.sign-pad-wrap.has-sign{border-style:solid;border-color:var(--accent);}
+#signature-canvas{width:100%;height:160px;display:block;cursor:crosshair;touch-action:none;}
+.sign-empty-hint{position:absolute;top:50%;left:0;right:0;text-align:center;transform:translateY(-50%);font-size:12px;color:#bbb;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.sign-empty-hint i{font-size:20px;opacity:0.6;}
+.sign-saved-badge{font-size:11px;color:#1a7a45;display:inline-flex;align-items:center;gap:4px;margin-left:auto;}
+/* Request fitur / konsultasi developer */
+.req-item{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;margin-bottom:6px;}
+.req-item-badge{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--accent-light);color:var(--accent);flex-shrink:0;white-space:nowrap;font-weight:500;}
+.req-item-body{flex:1;font-size:12px;min-width:0;}
+.req-item-msg{color:#333;margin-bottom:2px;word-break:break-word;}
+.req-item-date{font-size:10px;color:var(--muted);}
+.req-empty{font-size:12px;color:var(--muted);padding:6px 0;}
+@media(max-width:600px){
+  .sidebar{width:52px;}
+  .app-name,.app-sub,.u-label,.u-name span,.nav-item span,.nav-section,.sidebar-bottom{display:none;}
+  .nav-item{padding:12px;justify-content:center;}
+  .nav-item i{width:auto;}
+  .sidebar-user{padding:10px;text-align:center;}
+  .grid4{grid-template-columns:repeat(2,1fr);}
+  .grid2{grid-template-columns:1fr;}
+}
+
+/* ── LISENSI ── */
+#modal-lisensi{z-index:9998;}
+.lic-header{background:linear-gradient(135deg,#3C3489,#534AB7);border-radius:10px;padding:22px 18px;text-align:center;color:#fff;margin-bottom:16px;}
+.lic-icon{font-size:36px;margin-bottom:6px;}
+.lic-trial-badge{display:inline-block;background:rgba(255,255,255,0.2);border-radius:20px;padding:2px 12px;font-size:11px;margin-bottom:8px;}
+.lic-counter{font-size:34px;font-weight:800;}
+.plan-card{border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;margin-bottom:8px;position:relative;transition:border-color 0.15s,background 0.15s;}
+.plan-card:hover,.plan-card.selected{border-color:var(--accent);background:var(--accent-light);}
+.plan-card .pname{font-size:14px;font-weight:600;}
+.plan-card .pdesc{font-size:11px;color:var(--muted);margin-top:2px;}
+.plan-card .pprice{font-size:16px;font-weight:700;color:var(--accent);margin-top:6px;}
+.plan-card .pbadge{position:absolute;top:10px;right:10px;background:var(--accent);color:#fff;font-size:10px;padding:2px 8px;border-radius:20px;}
+.lic-steps{background:#f5f5f7;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;}
+.lic-steps ol{padding-left:16px;}
+.lic-steps li{margin-bottom:3px;line-height:1.5;color:#444;}
+.lic-key-row{display:flex;gap:8px;margin-bottom:8px;}
+.lic-key-row input{flex:1;font-family:monospace;text-transform:uppercase;letter-spacing:1px;}
+.lic-err{font-size:12px;color:var(--danger);display:none;margin-bottom:6px;}
+.lic-ok{background:#e8f8f0;border:1px solid #a8dfc0;border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.lic-ok i{color:#1a7a45;font-size:20px;}
+.trial-topbar-badge{font-size:10px;padding:2px 8px;border-radius:20px;cursor:pointer;margin-left:8px;font-weight:500;}
+
+/* ================================================
+   RESPONSIF MOBILE / ANDROID
+   ================================================ */
+
+/* Tablet 768px */
+@media (max-width: 768px) {
+  .shell { flex-direction: column; height: auto; min-height: 100vh; }
+  .sidebar { width: 100%; height: auto; flex-direction: row; flex-wrap: wrap; padding: 0; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.15); }
+  .sidebar-logo { padding: 10px 14px; flex: 1; }
+  .sidebar-logo .app-sub { display: none; }
+  .sidebar-user { padding: 10px 14px; border-bottom: none; border-left: 1px solid rgba(255,255,255,0.15); }
+  .sidebar-footer { display: none; }
+  .nav-section { display: none; }
+  .sidebar > div:not(.sidebar-logo):not(.sidebar-user):not(.sidebar-footer) { display: flex; flex-direction: row; overflow-x: auto; padding: 4px 8px; width: 100%; gap: 2px; }
+  .nav-btn { padding: 7px 10px; font-size: 12px; white-space: nowrap; border-radius: 8px; }
+  .nav-btn i { font-size: 14px; }
+  .main { min-height: calc(100vh - 100px); }
+  .topbar { padding: 10px 14px; }
+  .topbar-title { font-size: 14px; }
+  .content { padding: 12px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .grid2 { grid-template-columns: 1fr; }
+  .grid3 { grid-template-columns: 1fr; }
+  .grid4 { grid-template-columns: repeat(2, 1fr); }
+  .actions { flex-wrap: wrap; }
+  .actions .btn { flex: 1; min-width: 120px; justify-content: center; }
+  .tbl-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { min-width: 600px; }
+  #app-footer { padding: 8px 14px; }
+}
+
+/* HP / Android 480px */
+@media (max-width: 480px) {
+  .shell { flex-direction: column; }
+  .sidebar { width: 100%; }
+  .sidebar-logo .app-name { font-size: 13px; }
+  .nav-btn span { font-size: 11px; }
+  .content { padding: 10px; }
+  .topbar { padding: 8px 12px; }
+  .topbar-title { font-size: 13px; }
+  .topbar-right { gap: 4px; }
+  .topbar-right .btn { display: none; }
+  .trial-topbar-badge { font-size: 9px; padding: 2px 6px; }
+
+  /* Stat cards 2 kolom */
+  .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+  .stat-card { padding: 10px 12px; }
+  .stat-val { font-size: 18px; }
+  .stat-label { font-size: 10px; }
+
+  /* Grid semua jadi 1 kolom */
+  .grid2, .grid3, .grid4 { grid-template-columns: 1fr; }
+
+  /* Card padding lebih kecil */
+  .card { padding: 12px 14px; margin-bottom: 10px; }
+  .card-title { font-size: 11px; margin-bottom: 8px; }
+
+  /* Form */
+  input, select, textarea { font-size: 16px !important; } /* Cegah zoom di iOS/Android */
+  .fg { margin-bottom: 8px; }
+  label { font-size: 11px; }
+  .hint { font-size: 10px; }
+
+  /* Tombol */
+  .btn { padding: 9px 12px; font-size: 13px; }
+  .btn-sm { padding: 7px 10px; font-size: 12px; }
+  .actions { gap: 6px; }
+  .actions .btn { flex: 1 1 45%; justify-content: center; font-size: 12px; }
+
+  /* Preview box */
+  .preview-box { padding: 12px; }
+  .receipt-title { font-size: 16px; }
+  .receipt-no { font-size: 9px; }
+  .r-row { flex-direction: column; margin-bottom: 8px; }
+  .r-lbl { width: auto; font-size: 10px; margin-bottom: 1px; }
+  .r-val { font-size: 12px; }
+  .amt-box { padding: 10px; }
+  .amt-val { font-size: 16px; }
+  .amt-words { font-size: 9px; }
+  .sig-area { margin-top: 12px; }
+  .sig-line { margin: 20px auto 3px; }
+
+  /* Cat chips */
+  .cat-chips { gap: 4px; }
+  .cat-chip { font-size: 11px; padding: 4px 9px; }
+
+  /* No kwitansi */
+  .no-prev { padding: 6px 8px; }
+  .no-prev-val { font-size: 11px; }
+
+  /* Table - scroll horizontal */
+  .table-card { border-radius: 8px; }
+  .table-header { padding: 10px 12px; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .table-controls { width: 100%; flex-wrap: wrap; }
+  .search-inp { width: 100%; }
+  table { min-width: 500px; }
+  th { font-size: 10px; padding: 7px 8px; }
+  td { font-size: 11px; padding: 8px; }
+
+  /* Modal */
+  .modal-bg { padding: 8px; align-items: flex-end; }
+  .modal { border-radius: 14px 14px 0 0; max-height: 90vh; }
+
+  /* Login */
+  .login-box { padding: 24px 18px; }
+  .login-brand h1 { font-size: 18px; }
+  .plan-card { padding: 10px 12px; }
+  .plan-card .pprice { font-size: 14px; }
+
+  /* Laporan chart */
+  .chart-wrap { height: 70px; gap: 4px; }
+  .bar-label { font-size: 8px; }
+  .bar-num { font-size: 8px; }
+
+  /* Footer */
+  #app-footer { flex-direction: column; text-align: center; gap: 4px; padding: 8px 12px; }
+  #app-footer > div:last-child { text-align: center; }
+
+  /* Size options */
+  .size-options { grid-template-columns: repeat(2, 1fr); }
+
+  /* Riwayat table */
+  .history-item { padding: 8px 10px; gap: 8px; }
+  .h-name { font-size: 13px; }
+  .h-meta { font-size: 10px; }
+  .h-amt { font-size: 13px; }
+  .h-date { font-size: 10px; }
+}
+
+/* HP kecil 360px */
+@media (max-width: 360px) {
+  .content { padding: 8px; }
+  .nav-btn span { display: none; }
+  .nav-btn { padding: 8px; justify-content: center; }
+  .stat-val { font-size: 16px; }
+  .actions .btn { font-size: 11px; padding: 8px 8px; }
+}
+
+/* Landscape HP */
+@media (max-width: 768px) and (orientation: landscape) {
+  .sidebar { flex-direction: row; height: 48px; }
+  .content { padding: 8px 12px; }
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+  .nav-btn, .btn, .cat-chip, .plan-card, .history-item {
+    -webkit-tap-highlight-color: rgba(83,74,183,0.2);
+    cursor: pointer;
+  }
+  /* Tombol lebih besar untuk jari */
+  .btn { min-height: 40px; }
+  .nav-btn { min-height: 44px; }
+  input, select, textarea { min-height: 40px; }
+}
+
+</style>
+</head>
+<body>
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="app-icon"><i class="ti ti-receipt"></i></div>
+      <h1>KwitansiPro</h1>
+      <p>Pilih pengguna dan masukkan password untuk masuk</p>
+    </div>
+    <div class="login-user-list" id="login-user-list"></div>
+    <div id="login-pw-section" style="display:none;">
+      <div class="pw-field">
+        <input type="password" id="login-pw-input" placeholder="Masukkan password..." onkeydown="if(event.key==='Enter')doLogin()"/>
+        <button class="pw-toggle" onclick="togglePwVis('login-pw-input',this)"><i class="ti ti-eye"></i></button>
+      </div>
+      <div class="login-err" id="login-err">Password salah. Coba lagi.</div>
+      <button class="btn btn-primary" style="width:100%;" onclick="doLogin()"><i class="ti ti-login"></i> Masuk</button>
+    </div>
+    <div style="text-align:center;margin-top:14px;">
+      <span style="font-size:11px;color:var(--muted);">Pengguna tanpa password langsung masuk otomatis</span>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="app-name">KwitansiPro</div>
+      <div class="app-sub">Manajemen kwitansi digital</div>
+    </div>
+    <div class="sidebar-user" onclick="openUserModal()">
+      <div class="u-label">Pengguna aktif</div>
+      <div class="u-name"><span id="sb-uname">—</span> <i class="ti ti-chevron-down" style="font-size:12px;opacity:0.7;"></i></div>
+    </div>
+    <div class="nav-section"><span>Menu</span></div>
+    <button class="nav-item active" onclick="navGuarded('input',this)"><i class="ti ti-file-plus"></i><span>Buat Kwitansi</span></button>
+    <button class="nav-item" onclick="navGuarded('riwayat',this)"><i class="ti ti-history"></i><span>Riwayat</span></button>
+    <button class="nav-item" onclick="navGuarded('laporan',this)"><i class="ti ti-chart-bar"></i><span>Laporan</span></button>
+    <div class="nav-section"><span>Sistem</span></div>
+    <button class="nav-item" onclick="navGuarded('pengaturan',this)"><i class="ti ti-settings"></i><span>Pengaturan</span></button>
+    <button class="nav-item" onclick="navGuarded('users',this)"><i class="ti ti-users"></i><span>Pengguna</span></button>
+    <div class="sidebar-bottom" style="display:flex;flex-direction:column;gap:6px;">
+      <button class="nav-item" onclick="logout()" style="opacity:0.7;padding:8px 14px;"><i class="ti ti-logout"></i><span>Keluar / Ganti User</span></button>
+      <!-- Tombol Lisensi: hanya muncul saat trial habis -->
+      <button class="nav-item" id="sidebar-lic-btn" onclick="tampilkanBlokirTotal()" style="display:none;background:rgba(192,57,43,0.25);color:#ffb3b3;opacity:1;padding:8px 14px;"><i class="ti ti-lock"></i><span>Aktifkan Lisensi</span></button>
+      <div style="font-size:10px;padding:0 14px;line-height:1.7;">
+        <div style="font-weight:600;color:#fff;opacity:0.9;">© Una Digital Solution</div>
+        <div style="color:#fff;opacity:0.65;font-size:9px;">Menerima berbagai pesanan<br>aplikasi manajemen</div>
+        <div style="color:#fff;opacity:0.35;font-size:9px;margin-top:2px;">KwitansiPro v2.0</div>
+        <div style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.12);padding-top:6px;">
+          <div style="color:#fff;opacity:0.5;font-size:9px;">Dikembangkan untuk</div>
+          <div style="color:#fff;opacity:0.9;font-size:10px;font-weight:600;letter-spacing:0.2px;">Ta'lif Wan Nasyr</div>
+          <div style="color:#fff;opacity:0.6;font-size:9px;letter-spacing:0.3px;">HIMASAL TANGERANG RAYA</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Buat Kwitansi</div>
+      <div class="topbar-actions" style="display:flex;align-items:center;gap:6px;">
+        <span class="badge badge-purple" id="topbar-lembaga">—</span>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- INPUT -->
+      <div class="panel active" id="panel-input">
+        <div class="grid2" style="margin-bottom:12px;">
+          <div class="fg"><label>Tanggal</label><input type="date" id="tgl" onchange="onTglChange()"/></div>
+          <div class="fg"><label>Nomor kwitansi (otomatis)</label><input type="text" id="no-display" class="mono" readonly/></div>
+        </div>
+        <div class="grid2">
+          <div class="fg"><label>Diterima dari</label><input type="text" id="dari" placeholder="Nama pembayar" oninput="updatePreview()"/></div>
+          <div class="fg"><label>Jumlah (Rp)</label><input type="number" id="jumlah" placeholder="0" min="0" oninput="updatePreview()"/></div>
+        </div>
+        <div class="fg"><label>Keperluan / keterangan</label><textarea id="keperluan" placeholder="Untuk pembayaran..." oninput="updatePreview()"></textarea></div>
+        <div class="fg"><label>Kategori</label><div class="cat-chips" id="cat-chips-input"></div></div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="simpan()"><i class="ti ti-device-floppy"></i> Simpan</button>
+          <button class="btn btn-outline" onclick="exportPDF()"><i class="ti ti-file-type-pdf"></i> Export PDF</button>
+          <button class="btn btn-outline" onclick="cetakBrowser()"><i class="ti ti-printer"></i> Cetak</button>
+          <button class="btn btn-ghost" onclick="resetInput()"><i class="ti ti-refresh"></i> Reset</button>
+        </div>
+        <div id="trial-info-bar" style="display:none;margin-top:8px;"></div>
+        <div style="margin-top:14px;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:4px;"><i class="ti ti-eye"></i> Pratinjau</div>
+          <div class="preview-box" id="preview-box"></div>
+        </div>
+      </div>
+
+      <!-- RIWAYAT -->
+      <div class="panel" id="panel-riwayat">
+        <div class="grid4" style="margin-bottom:14px;" id="stat-grid"></div>
+        <div class="card" style="padding:12px 14px;">
+          <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+            <div class="search-wrap" style="flex:1;min-width:180px;margin-bottom:0;">
+              <i class="ti ti-search"></i>
+              <input type="text" id="search-input" placeholder="Cari nama, nomor, keterangan..." oninput="renderRiwayat()"/>
+            </div>
+            <select id="filter-cat" onchange="renderRiwayat()" style="width:auto;font-size:12px;"><option value="">Semua kategori</option></select>
+            <select id="filter-bulan" onchange="renderRiwayat()" style="width:auto;font-size:12px;"><option value="">Semua bulan</option></select>
+          </div>
+          <div class="tbl-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="tbl">
+            <thead><tr><th>Nomor</th><th>Dari</th><th>Keperluan</th><th>Kategori</th><th>Jumlah</th><th>Tanggal</th><th></th></tr></thead>
+            <tbody id="riwayat-tbody"></tbody>
+          </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- LAPORAN -->
+      <div class="panel" id="panel-laporan">
+        <div class="month-selector">
+          <select id="lap-tahun" onchange="renderLaporan()" style="width:auto;"></select>
+          <select id="lap-bulan" onchange="renderLaporan()" style="width:auto;"></select>
+          <button class="btn btn-outline btn-sm" onclick="exportLaporanPDF()"><i class="ti ti-file-type-pdf"></i> Export PDF</button>
+        </div>
+        <div class="grid4" id="lap-stats" style="margin-bottom:14px;"></div>
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title"><i class="ti ti-chart-bar"></i> Tren 6 bulan</div>
+            <div class="chart-wrap" id="lap-chart"></div>
+          </div>
+          <div class="card">
+            <div class="card-title"><i class="ti ti-tag"></i> Per kategori</div>
+            <div class="cat-summary" id="lap-cat"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="ti ti-list"></i> Daftar kwitansi bulan ini</div>
+          <div class="tbl-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="tbl">
+            <thead><tr><th>Nomor</th><th>Dari</th><th>Kategori</th><th>Jumlah</th></tr></thead>
+            <tbody id="lap-tbody"></tbody>
+          </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PENGATURAN -->
+      <div class="panel" id="panel-pengaturan">
+        <div class="logo-area">
+          <div class="logo-box" id="logo-box">
+            <i class="ti ti-photo" id="logo-ph" style="font-size:22px;color:#ccc;"></i>
+            <img id="logo-img" src="" alt="Logo" style="display:none;"/>
+          </div>
+          <div style="flex:1;">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:6px;">Logo / kop lembaga (PNG, JPG, SVG · Maks. 2MB)</p>
+            <div style="display:flex;gap:6px;">
+              <button class="btn-upload" onclick="document.getElementById('file-input').click()"><i class="ti ti-upload"></i> Upload Logo</button>
+              <button class="btn btn-danger btn-xs" id="btn-rm-logo" style="display:none;" onclick="removeLogo()"><i class="ti ti-trash"></i> Hapus</button>
+            </div>
+          </div>
+          <input type="file" id="file-input" accept="image/*" onchange="handleLogo(event)"/>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="ti ti-building"></i> Identitas lembaga</div>
+          <div class="grid2">
+            <div class="fg"><label>Nama lembaga / perusahaan</label><input type="text" id="s-nama" oninput="autoSaveCfg()"/></div>
+            <div class="fg"><label>Kode lembaga</label><input type="text" id="s-kode" class="mono" maxlength="10" oninput="this.value=this.value.toUpperCase();autoSaveCfg();updateNoPrev();"/><span class="hint">Awalan nomor kwitansi</span></div>
+          </div>
+          <div class="fg"><label>Alamat (opsional)</label><input type="text" id="s-alamat" oninput="autoSaveCfg()"/></div>
+          <div class="fg"><label>Nama penanda tangan</label><input type="text" id="s-ttd" oninput="autoSaveCfg()"/></div>
+          <div class="grid2">
+            <div class="fg"><label>Jabatan</label><input type="text" id="s-jab" oninput="autoSaveCfg()"/></div>
+            <div class="fg"><label>Kota</label><input type="text" id="s-kota" oninput="autoSaveCfg()"/></div>
+          </div>
+          <div class="no-prev"><span class="no-prev-label"><i class="ti ti-hash"></i> Contoh nomor:</span><span class="no-prev-val" id="no-prev-val">—</span></div>
+        </div>
+        <!-- TANDA TANGAN DIGITAL -->
+        <div class="card">
+          <div class="card-title" style="justify-content:space-between;"><span><i class="ti ti-signature"></i> Tanda tangan digital</span><span class="sign-saved-badge" id="sign-saved-badge" style="display:none;"><i class="ti ti-circle-check"></i> Tersimpan</span></div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Gambar tanda tangan langsung dengan mouse/jari, atau upload foto/scan tanda tangan. Tanda tangan ini otomatis muncul pada kwitansi, menggantikan garis tanda tangan cetak.</p>
+          <div class="sign-pad-wrap" id="sign-pad-wrap">
+            <canvas id="signature-canvas"></canvas>
+            <div class="sign-empty-hint" id="sign-empty-hint"><i class="ti ti-writing"></i><span>Gambar tanda tangan di area ini</span></div>
+          </div>
+          <div class="actions" style="margin-top:10px;">
+            <button class="btn btn-outline btn-sm" type="button" onclick="clearSignaturePad()"><i class="ti ti-eraser"></i> Hapus Coretan</button>
+            <button class="btn btn-primary btn-sm" type="button" onclick="saveSignaturePad()"><i class="ti ti-device-floppy"></i> Simpan Tanda Tangan</button>
+            <button class="btn btn-danger btn-sm" id="btn-rm-sign" type="button" onclick="removeSignature()" style="display:none;"><i class="ti ti-trash"></i> Hapus Tersimpan</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin:14px 0;">
+            <div style="flex:1;height:0.5px;background:var(--border);"></div><span style="font-size:11px;color:var(--muted);">ATAU</span><div style="flex:1;height:0.5px;background:var(--border);"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button class="btn-upload" type="button" onclick="document.getElementById('sign-file-input').click()"><i class="ti ti-upload"></i> Upload Gambar Tanda Tangan</button>
+            <span class="hint" style="margin:0;">PNG/JPG · Maks. 2MB · latar transparan disarankan</span>
+          </div>
+          <input type="file" id="sign-file-input" accept="image/*" style="display:none;" onchange="handleSignatureUpload(event)"/>
+        </div>
+        <!-- PASSWORD -->
+        <div class="card">
+          <div class="card-title"><i class="ti ti-lock"></i> Keamanan akun</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Password digunakan saat login berpindah pengguna. Kosongkan jika tidak ingin menggunakan password.</p>
+          <div class="grid2">
+            <div class="fg">
+              <label>Password baru</label>
+              <div class="pw-field" style="margin-bottom:0;">
+                <input type="password" id="s-pw-new" placeholder="Buat password baru"/>
+                <button class="pw-toggle" onclick="togglePwVis('s-pw-new',this)"><i class="ti ti-eye"></i></button>
+              </div>
+            </div>
+            <div class="fg">
+              <label>Konfirmasi password</label>
+              <div class="pw-field" style="margin-bottom:0;">
+                <input type="password" id="s-pw-confirm" placeholder="Ulangi password"/>
+                <button class="pw-toggle" onclick="togglePwVis('s-pw-confirm',this)"><i class="ti ti-eye"></i></button>
+              </div>
+            </div>
+          </div>
+          <div id="pw-err" style="font-size:12px;color:var(--danger);margin-top:6px;display:none;"></div>
+          <div id="pw-ok" style="font-size:12px;color:#1a7a45;margin-top:6px;display:none;"><i class="ti ti-check"></i> Password aktif terpasang</div>
+        </div>
+        <!-- TOMBOL SIMPAN -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <button class="btn btn-primary" onclick="simpanPengaturan()"><i class="ti ti-device-floppy"></i> Simpan Pengaturan</button>
+          <span class="save-indicator" id="save-indicator"><i class="ti ti-circle-check"></i> Tersimpan</span>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="ti ti-tag"></i> Kategori pembayaran</div>
+          <div id="cat-list-setting" style="margin-bottom:10px;"></div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="new-cat-name" placeholder="Nama kategori baru" style="flex:1;"/>
+            <input type="color" id="new-cat-color" value="#534AB7" style="width:36px;padding:2px;border-radius:6px;cursor:pointer;"/>
+            <button class="btn btn-primary btn-sm" onclick="addCat()"><i class="ti ti-plus"></i> Tambah</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="ti ti-printer"></i> Ukuran cetak</div>
+          <div class="size-opts" id="size-opts">
+            <div class="size-opt active" data-size="a5" onclick="selSize('a5')"><div class="sname">A5</div><div class="sdesc">148×210mm<br>Umum</div></div>
+            <div class="size-opt" data-size="a4" onclick="selSize('a4')"><div class="sname">A4</div><div class="sdesc">210×297mm<br>Formal</div></div>
+            <div class="size-opt" data-size="t80" onclick="selSize('t80')"><div class="sname">Thermal 80</div><div class="sdesc">80mm<br>Kasir</div></div>
+            <div class="size-opt" data-size="t58" onclick="selSize('t58')"><div class="sname">Thermal 58</div><div class="sdesc">58mm<br>Portable</div></div>
+          </div>
+        </div>
+        <!-- REQUEST FITUR / KONSULTASI DEVELOPER -->
+        <div class="card">
+          <div class="card-title"><i class="ti ti-headset"></i> Request Fitur / Konsultasi Developer</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Punya ide fitur tambahan, butuh bantuan pemakaian, atau menemukan kendala pada aplikasi? Kirim pesan langsung ke developer aplikasi ini via WhatsApp.</p>
+          <div class="fg">
+            <label>Jenis permintaan</label>
+            <select id="req-type">
+              <option value="Request Fitur Tambahan">Request fitur tambahan</option>
+              <option value="Konsultasi Penggunaan">Konsultasi penggunaan aplikasi</option>
+              <option value="Laporan Kendala/Bug">Laporan kendala / bug</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
+          <div class="fg"><label>Pesan</label><textarea id="req-msg" placeholder="Jelaskan fitur yang Anda inginkan, pertanyaan, atau kendala yang dialami..."></textarea></div>
+          <div class="fg"><label>Kontak balasan (opsional)</label><input type="text" id="req-contact" placeholder="No. WhatsApp lain / email untuk dihubungi balik"/></div>
+          <div class="actions">
+            <button class="btn btn-primary" type="button" onclick="sendDevRequest()"><i class="ti ti-brand-whatsapp"></i> Kirim ke Developer</button>
+            <button class="btn btn-outline" type="button" onclick="copyDevRequest()"><i class="ti ti-copy"></i> Salin Pesan</button>
+          </div>
+          <div style="margin-top:14px;">
+            <div style="font-size:11px;color:var(--muted);font-weight:500;letter-spacing:0.4px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;"><i class="ti ti-history"></i> Riwayat permintaan terkirim</div>
+            <div id="req-history"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- USERS -->
+      <div class="panel" id="panel-users">
+        <div class="card">
+          <div class="card-title"><i class="ti ti-users"></i> Daftar pengguna / lembaga</div>
+          <div id="user-list-main" style="margin-bottom:12px;"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input type="text" id="new-u-name" placeholder="Nama pengguna/lembaga" style="flex:1;min-width:160px;"/>
+            <input type="text" id="new-u-role" placeholder="Peran (misal: Admin)" style="flex:1;min-width:120px;"/>
+            <div class="pw-field" style="flex:1;min-width:140px;margin-bottom:0;">
+              <input type="password" id="new-u-pw" placeholder="Password (opsional)"/>
+              <button class="pw-toggle" onclick="togglePwVis('new-u-pw',this)"><i class="ti ti-eye"></i></button>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="addUser()"><i class="ti ti-plus"></i> Tambah</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="ti ti-info-circle"></i> Cara penggunaan multi-user</div>
+          <p style="font-size:13px;color:var(--muted);line-height:1.7;">Setiap pengguna/lembaga menyimpan data kwitansi secara terpisah. Klik nama di sidebar atau panel ini untuk berpindah. Pengaturan lembaga (nama, kode, logo) berlaku per pengguna.</p>
+        </div>
+      </div>
+
+    </div><!-- end .content -->
+
+<!-- FOOTER COPYRIGHT -->
+<div id="app-footer" style="
+  background:#1a1a2e;
+  border-top:1px solid rgba(83,74,183,0.3);
+  padding:10px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-shrink:0;
+  flex-wrap:wrap;
+  gap:6px;
+">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div style="width:24px;height:24px;background:#534AB7;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;">U</div>
+    <div>
+      <div style="font-size:11px;font-weight:600;color:#ccc;">© Una Digital Solution</div>
+      <div style="font-size:10px;color:#666;">Menerima berbagai pesanan aplikasi manajemen</div>
+    </div>
+  </div>
+  <div style="text-align:right;">
+    <div style="font-size:11px;color:#888;">Dikembangkan untuk</div>
+    <div style="font-size:12px;font-weight:700;color:#7C6FF7;">Ta'lif Wan Nasyr</div>
+    <div style="font-size:10px;color:#666;letter-spacing:0.3px;">HIMASAL TANGERANG RAYA</div>
+  </div>
+</div>
+
+  </div><!-- end .main -->
+</div><!-- end .shell -->
+
+<!-- MODAL USER -->
+<div class="modal-bg" id="modal-user" style="display:none;" onclick="if(event.target===this)closeModal('modal-user')">
+  <div class="modal">
+    <div class="modal-title">Ganti Pengguna <button class="btn-ghost btn-sm" onclick="closeModal('modal-user')"><i class="ti ti-x"></i></button></div>
+    <div id="modal-user-list" style="margin-bottom:12px;"></div>
+    <button class="btn btn-outline btn-sm" onclick="closeModal('modal-user');nav('users',null)"><i class="ti ti-users"></i> Kelola pengguna</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const {jsPDF}=window.jspdf;
+let users=[],activeUid=null,logo='';
+let signature='',signaturePad=null;
+let loginSelectedUid=null;
+const DEFAULT_CATS=[{id:'c1',name:'SPP',color:'#534AB7'},{id:'c2',name:'Seragam',color:'#1a7a45'},{id:'c3',name:'Umroh',color:'#b05e00'},{id:'c4',name:'Lainnya',color:'#888'}];
+function ls(k,v){if(v===undefined){try{return JSON.parse(localStorage.getItem(k)||'null');}catch{return null;}}try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+function hashPw(pw){if(!pw)return'';let h=0;for(let i=0;i<pw.length;i++){h=((h<<5)-h)+pw.charCodeAt(i);h|=0;}return'h'+Math.abs(h).toString(36);}
+
+function initData(){
+  users=ls('kwtp_users')||[{id:'u1',name:'Admin',role:'Administrator',pwHash:'',cfg:{nama:'',kode:'',alamat:'',ttd:'',jab:'',kota:'Jakarta',size:'a5',cats:[...DEFAULT_CATS]},db:[]}];
+  // migrate old users without pwHash
+  users.forEach(u=>{if(u.pwHash===undefined)u.pwHash='';});
+  activeUid=null;
+  logo='';signature='';
+}
+function saveUsers(){ls('kwtp_users',users);}
+function getUser(){return users.find(u=>u.id===activeUid)||users[0];}
+function getCfg(){return getUser().cfg;}
+function getDb(){return getUser().db;}
+function getCats(){return getCfg().cats||DEFAULT_CATS;}
+
+// -- LOGIN --------------------------------------------------------------
+function renderLoginUserList(){
+  const el=document.getElementById('login-user-list');
+  el.innerHTML=users.map(u=>`
+    <button class="login-user-btn${loginSelectedUid===u.id?' selected':''}" onclick="selectLoginUser('${u.id}')">
+      <div class="avatar" style="background:${strColor(u.name)}">${u.name[0].toUpperCase()}</div>
+      <div class="uinfo"><div class="un">${u.name}</div><div class="ur">${u.role}${u.db&&u.db.length?' · '+u.db.length+' kwitansi':''}</div></div>
+      <i class="ti ${u.pwHash?'ti-lock':'ti-lock-open'} lock-icon"></i>
+    </button>`).join('');
+}
+function selectLoginUser(uid){
+  loginSelectedUid=uid;
+  renderLoginUserList();
+  const u=users.find(x=>x.id===uid);
+  const pwSection=document.getElementById('login-pw-section');
+  document.getElementById('login-err').classList.remove('show');
+  document.getElementById('login-pw-input').value='';
+  if(u.pwHash){
+    pwSection.style.display='block';
+    setTimeout(()=>document.getElementById('login-pw-input').focus(),100);
+  } else {
+    // no password - login immediately
+    doLoginAs(uid);
+  }
+}
+function doLogin(){
+  const uid=loginSelectedUid;if(!uid)return;
+  const u=users.find(x=>x.id===uid);
+  const entered=document.getElementById('login-pw-input').value;
+  if(hashPw(entered)!==u.pwHash){
+    document.getElementById('login-err').classList.add('show');
+    document.getElementById('login-pw-input').select();
+    return;
+  }
+  doLoginAs(uid);
+}
+function doLoginAs(uid){
+  activeUid=uid;ls('kwtp_uid',uid);
+  logo=ls('kwtp_logo_'+uid)||'';
+  signature=ls('kwtp_sign_'+uid)||'';
+  document.getElementById('login-screen').classList.add('hidden');
+  applyLogo();loadSettingsUI();updateTopbar();renderCatChipsInput();renderFilterCat();
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('tgl').value=today;updateNo();updatePreview();renderRiwayat();
+  // Cek apakah trial sudah habis
+  if(!isTrialActive()){
+    applyTrialBlockOverlay();
+    // Modal TIDAK auto-popup - user bisa ke pengaturan/pengguna dulu
+  }
+  updateLicBadge();
+  updateTrialInfoBar();
+}
+function togglePwVis(inputId,btn){
+  const inp=document.getElementById(inputId);
+  const isHidden=inp.type==='password';
+  inp.type=isHidden?'text':'password';
+  btn.innerHTML=`<i class="ti ${isHidden?'ti-eye-off':'ti-eye'}"></i>`;
+}
+function logout(){
+  activeUid=null;loginSelectedUid=null;
+  document.getElementById('login-pw-section').style.display='none';
+  document.getElementById('login-pw-input').value='';
+  document.getElementById('login-err').classList.remove('show');
+  document.getElementById('login-screen').classList.remove('hidden');
+  renderLoginUserList();
+}
+
+// -- SETTINGS ----------------------------------------------------------
+function simpanPengaturan(){
+  const cfg=getCfg();
+  cfg.nama=document.getElementById('s-nama').value.trim();
+  cfg.kode=document.getElementById('s-kode').value.trim();
+  cfg.alamat=document.getElementById('s-alamat').value.trim();
+  cfg.ttd=document.getElementById('s-ttd').value.trim();
+  cfg.jab=document.getElementById('s-jab').value.trim();
+  cfg.kota=document.getElementById('s-kota').value.trim()||'Jakarta';
+  // password
+  const pwNew=document.getElementById('s-pw-new').value;
+  const pwConfirm=document.getElementById('s-pw-confirm').value;
+  const pwErr=document.getElementById('pw-err');
+  const pwOk=document.getElementById('pw-ok');
+  pwErr.style.display='none';pwOk.style.display='none';
+  if(pwNew||pwConfirm){
+    if(pwNew.length<4){pwErr.textContent='Password minimal 4 karakter.';pwErr.style.display='block';return;}
+    if(pwNew!==pwConfirm){pwErr.textContent='Konfirmasi password tidak cocok.';pwErr.style.display='block';return;}
+    getUser().pwHash=hashPw(pwNew);
+    document.getElementById('s-pw-new').value='';
+    document.getElementById('s-pw-confirm').value='';
+    pwOk.style.display='block';
+  } else {
+    // show current pw status
+    if(getUser().pwHash)pwOk.style.display='block';
+  }
+  saveUsers();updateTopbar();updateNoPrev();
+  // show saved indicator
+  const ind=document.getElementById('save-indicator');
+  ind.classList.add('show');setTimeout(()=>ind.classList.remove('show'),2500);
+  showToast('Pengaturan berhasil disimpan');
+}
+function autoSaveCfg(){/* no-op: now manual via simpanPengaturan */}
+function loadSettingsUI(){
+  const cfg=getCfg();
+  document.getElementById('s-nama').value=cfg.nama||'';
+  document.getElementById('s-kode').value=cfg.kode||'';
+  document.getElementById('s-alamat').value=cfg.alamat||'';
+  document.getElementById('s-ttd').value=cfg.ttd||'';
+  document.getElementById('s-jab').value=cfg.jab||'';
+  document.getElementById('s-kota').value=cfg.kota||'Jakarta';
+  document.getElementById('s-pw-new').value='';
+  document.getElementById('s-pw-confirm').value='';
+  document.getElementById('pw-err').style.display='none';
+  const pwOk=document.getElementById('pw-ok');
+  pwOk.style.display=getUser().pwHash?'block':'none';
+  selSize(cfg.size||'a5',true);renderCatSetting();updateNoPrev();
+  renderDevRequestHistory();
+  setTimeout(initSignaturePad,0);
+}
+function updateNoPrev(){document.getElementById('no-prev-val').textContent=buildNo(getCfg().kode,new Date().toISOString().split('T')[0],getDb().length+1);}
+function selSize(s,silent){getCfg().size=s;if(!silent)saveUsers();document.querySelectorAll('.size-opt').forEach(el=>el.classList.toggle('active',el.dataset.size===s));if(activeUid)updatePreview();}
+let selectedCat='';
+function renderCatChipsInput(){const wrap=document.getElementById('cat-chips-input');wrap.innerHTML=getCats().map(c=>`<div class="cat-chip${selectedCat===c.id?' selected':''}" onclick="selCat('${c.id}')" style="${selectedCat===c.id?'background:'+c.color+'22;border-color:'+c.color+';color:'+c.color:''}">${c.name}</div>`).join('');}
+function selCat(id){selectedCat=selectedCat===id?'':id;renderCatChipsInput();updatePreview();}
+function renderCatSetting(){document.getElementById('cat-list-setting').innerHTML=getCats().map(c=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border);"><div style="width:12px;height:12px;border-radius:50%;background:${c.color};flex-shrink:0;"></div><span style="flex:1;font-size:13px;">${c.name}</span><button class="btn btn-danger btn-xs" onclick="delCat('${c.id}')"><i class="ti ti-trash"></i></button></div>`).join('');renderFilterCat();}
+function addCat(){const name=document.getElementById('new-cat-name').value.trim();const color=document.getElementById('new-cat-color').value;if(!name){showToast('Isi nama kategori');return;}getCats().push({id:'c'+Date.now(),name,color});saveUsers();document.getElementById('new-cat-name').value='';renderCatSetting();renderCatChipsInput();showToast('Kategori ditambahkan');}
+function delCat(id){getCfg().cats=getCats().filter(c=>c.id!==id);if(selectedCat===id)selectedCat='';saveUsers();renderCatSetting();renderCatChipsInput();showToast('Kategori dihapus');}
+function getCatById(id){return getCats().find(c=>c.id===id)||null;}
+function renderFilterCat(){const sel=document.getElementById('filter-cat');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">Semua kategori</option>'+getCats().map(c=>`<option value="${c.id}"${c.id===cur?'selected':''}>${c.name}</option>`).join('');}
+function handleLogo(e){const f=e.target.files[0];if(!f)return;if(f.size>2*1024*1024){showToast('Maks. 2MB');return;}const r=new FileReader();r.onload=ev=>{logo=ev.target.result;ls('kwtp_logo_'+activeUid,logo);applyLogo();updatePreview();showToast('Logo disimpan');};r.readAsDataURL(f);}
+function removeLogo(){logo='';ls('kwtp_logo_'+activeUid,'');document.getElementById('file-input').value='';applyLogo();updatePreview();}
+function applyLogo(){const img=document.getElementById('logo-img'),ph=document.getElementById('logo-ph'),btn=document.getElementById('btn-rm-logo');if(logo){img.src=logo;img.style.display='block';ph.style.display='none';btn.style.display='inline-flex';}else{img.src='';img.style.display='none';ph.style.display='block';btn.style.display='none';}}
+
+// -- SIGNATURE PAD (tanda tangan manual) ---------------------------------
+function resizeSignatureCanvas(){
+  const canvas=document.getElementById('signature-canvas');if(!canvas)return;
+  const ratio=Math.max(window.devicePixelRatio||1,1);
+  const prevData=(signaturePad&&!signaturePad.isEmpty())?signaturePad.toDataURL('image/png'):(signature||null);
+  canvas.width=canvas.offsetWidth*ratio;canvas.height=canvas.offsetHeight*ratio;
+  canvas.getContext('2d').scale(ratio,ratio);
+  if(signaturePad){signaturePad.clear();if(prevData)signaturePad.fromDataURL(prevData,{ratio:1,width:canvas.offsetWidth,height:canvas.offsetHeight});}
+  updateSignEmptyHint();
+}
+function initSignaturePad(){
+  const canvas=document.getElementById('signature-canvas');if(!canvas||typeof SignaturePad==='undefined')return;
+  if(!signaturePad){
+    signaturePad=new SignaturePad(canvas,{backgroundColor:'rgba(255,255,255,1)',penColor:'#1a1a2e',minWidth:1,maxWidth:2.6,velocityFilterWeight:0.7});
+    signaturePad.addEventListener('beginStroke',updateSignEmptyHint);
+    signaturePad.addEventListener('endStroke',updateSignEmptyHint);
+    window.addEventListener('resize',()=>{if(document.getElementById('panel-pengaturan').classList.contains('active'))resizeSignatureCanvas();});
+  }
+  resizeSignatureCanvas();
+  if(signature){signaturePad.clear();signaturePad.fromDataURL(signature,{ratio:1,width:canvas.offsetWidth,height:canvas.offsetHeight});}
+  updateSignEmptyHint();
+  document.getElementById('btn-rm-sign').style.display=signature?'inline-flex':'none';
+  document.getElementById('sign-saved-badge').style.display=signature?'inline-flex':'none';
+}
+function updateSignEmptyHint(){
+  const hint=document.getElementById('sign-empty-hint'),wrap=document.getElementById('sign-pad-wrap');
+  if(!hint||!signaturePad)return;
+  const empty=signaturePad.isEmpty();
+  hint.style.display=empty?'flex':'none';
+  wrap.classList.toggle('has-sign',!empty);
+}
+function clearSignaturePad(){if(signaturePad)signaturePad.clear();updateSignEmptyHint();}
+function saveSignaturePad(){
+  if(!signaturePad||signaturePad.isEmpty()){showToast('Gambar tanda tangan terlebih dahulu');return;}
+  signature=signaturePad.toDataURL('image/png');
+  ls('kwtp_sign_'+activeUid,signature);
+  document.getElementById('btn-rm-sign').style.display='inline-flex';
+  document.getElementById('sign-saved-badge').style.display='inline-flex';
+  updatePreview();showToast('Tanda tangan berhasil disimpan');
+}
+function handleSignatureUpload(e){
+  const f=e.target.files[0];if(!f)return;
+  if(!f.type.startsWith('image/')){showToast('File harus berupa gambar');e.target.value='';return;}
+  if(f.size>2*1024*1024){showToast('Maks. 2MB');e.target.value='';return;}
+  const r=new FileReader();
+  r.onload=ev=>{
+    signature=ev.target.result;
+    ls('kwtp_sign_'+activeUid,signature);
+    if(signaturePad){const canvas=document.getElementById('signature-canvas');signaturePad.clear();signaturePad.fromDataURL(signature,{ratio:1,width:canvas.offsetWidth,height:canvas.offsetHeight});updateSignEmptyHint();}
+    document.getElementById('btn-rm-sign').style.display='inline-flex';
+    document.getElementById('sign-saved-badge').style.display='inline-flex';
+    e.target.value='';
+    updatePreview();showToast('Tanda tangan dari gambar berhasil disimpan');
+  };
+  r.readAsDataURL(f);
+}
+function removeSignature(){
+  signature='';ls('kwtp_sign_'+activeUid,'');
+  if(signaturePad)signaturePad.clear();
+  document.getElementById('btn-rm-sign').style.display='none';
+  document.getElementById('sign-saved-badge').style.display='none';
+  updateSignEmptyHint();updatePreview();showToast('Tanda tangan tersimpan dihapus');
+}
+
+// -- REQUEST FITUR / KONSULTASI DEVELOPER --------------------------------
+const DEV_WA='6289646981124';
+function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function buildDevRequestText(){
+  const type=document.getElementById('req-type').value;
+  const msg=document.getElementById('req-msg').value.trim();
+  const contact=document.getElementById('req-contact').value.trim();
+  const u=getUser(),cfg=getCfg();
+  let text='Halo Developer KwitansiPro,\n\nJenis permintaan: '+type+'\nDari pengguna/lembaga: '+(cfg.nama||u.name)+'\n\nPesan:\n'+msg;
+  if(contact)text+='\n\nKontak balasan: '+contact;
+  text+='\n\n- Dikirim dari aplikasi KwitansiPro';
+  return{type,msg,contact,text};
+}
+function sendDevRequest(){
+  const{type,msg,contact,text}=buildDevRequestText();
+  if(!msg){showToast('Tulis pesan terlebih dahulu');return;}
+  window.open('https://wa.me/'+DEV_WA+'?text='+encodeURIComponent(text),'_blank');
+  saveDevRequestHistory(type,msg,contact);
+  showToast('Membuka WhatsApp ke developer...');
+}
+function copyDevRequest(){
+  const{msg,text}=buildDevRequestText();
+  if(!msg){showToast('Tulis pesan terlebih dahulu');return;}
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>showToast('Pesan disalin, silakan kirim manual ke developer')).catch(()=>showToast('Gagal menyalin, salin manual dari kolom pesan'));
+  }else{showToast('Browser tidak mendukung salin otomatis');}
+}
+function saveDevRequestHistory(type,msg,contact){
+  const key='kwtp_devreq_'+activeUid;
+  const list=ls(key)||[];
+  list.unshift({id:Date.now(),type,msg,contact,date:new Date().toISOString()});
+  ls(key,list.slice(0,20));
+  document.getElementById('req-msg').value='';
+  document.getElementById('req-contact').value='';
+  renderDevRequestHistory();
+}
+function renderDevRequestHistory(){
+  const wrap=document.getElementById('req-history');if(!wrap)return;
+  const list=ls('kwtp_devreq_'+activeUid)||[];
+  if(!list.length){wrap.innerHTML='<div class="req-empty">Belum ada permintaan yang dikirim</div>';return;}
+  wrap.innerHTML=list.map(r=>{const d=new Date(r.date);const dStr=d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});return'<div class="req-item"><span class="req-item-badge">'+escapeHtml(r.type)+'</span><div class="req-item-body"><div class="req-item-msg">'+escapeHtml((r.msg||'').substring(0,160))+'</div><div class="req-item-date">'+dStr+(r.contact?' · '+escapeHtml(r.contact):'')+'</div></div><button class="btn-ghost btn-xs" onclick="delDevRequest('+r.id+')"><i class="ti ti-x"></i></button></div>';}).join('');
+}
+function delDevRequest(id){const key='kwtp_devreq_'+activeUid;ls(key,(ls(key)||[]).filter(r=>r.id!==id));renderDevRequestHistory();}
+function addUser(){
+  const name=document.getElementById('new-u-name').value.trim();
+  const role=document.getElementById('new-u-role').value.trim()||'Pengguna';
+  const pw=document.getElementById('new-u-pw').value;
+  if(!name){showToast('Isi nama pengguna');return;}
+  users.push({id:'u'+Date.now(),name,role,pwHash:hashPw(pw),cfg:{nama:'',kode:'',alamat:'',ttd:'',jab:'',kota:'Jakarta',size:'a5',cats:[...DEFAULT_CATS]},db:[]});
+  saveUsers();renderUserListMain();renderLoginUserList();
+  document.getElementById('new-u-name').value='';document.getElementById('new-u-role').value='';document.getElementById('new-u-pw').value='';
+  showToast('Pengguna ditambahkan'+(pw?' (dengan password)':''));
+}
+function switchUser(uid){
+  // logout and go to login for this uid
+  loginSelectedUid=uid;
+  const u=users.find(x=>x.id===uid);
+  if(u.pwHash){
+    activeUid=null;
+    document.getElementById('login-screen').classList.remove('hidden');
+    renderLoginUserList();
+    document.getElementById('login-pw-section').style.display='block';
+    document.getElementById('login-pw-input').value='';
+    document.getElementById('login-err').classList.remove('show');
+    closeModal('modal-user');
+    setTimeout(()=>document.getElementById('login-pw-input').focus(),150);
+  } else {
+    doLoginAs(uid);
+  }
+}
+function delUser(uid){if(users.length<=1){showToast('Minimal 1 pengguna');return;}users=users.filter(u=>u.id!==uid);saveUsers();if(activeUid===uid){logout();}else{renderUserListMain();renderLoginUserList();}}
+function strColor(s){const c=['#534AB7','#1a7a45','#b05e00','#c0392b','#0077b6','#6d3f9e'];let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%c.length;return c[h];}
+function renderUserListMain(){document.getElementById('user-list-main').innerHTML=users.map(u=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;margin-bottom:6px;${u.id===activeUid?'border-color:var(--accent);background:var(--accent-light)':''}"><div class="user-avatar" style="background:${strColor(u.name)}">${u.name[0].toUpperCase()}</div><div style="flex:1;"><div class="uname">${u.name}</div><div class="urole">${u.role} <span style="color:${u.pwHash?'#1a7a45':'var(--muted)'};">${u.pwHash?'🔒 Terproteksi':'🔓 Tanpa password'}</span></div></div><button class="btn btn-outline btn-xs" onclick="switchUser('${u.id}')">${u.id===activeUid?'Aktif':'Pilih'}</button>${users.length>1?`<button class="btn btn-danger btn-xs" onclick="delUser('${u.id}')"><i class="ti ti-trash"></i></button>`:''}</div>`).join('');}
+function renderModalUserList(){document.getElementById('modal-user-list').innerHTML=users.map(u=>`<div class="user-opt${u.id===activeUid?' active-user':''}" onclick="switchUser('${u.id}')"><div class="user-avatar" style="background:${strColor(u.name)}">${u.name[0].toUpperCase()}</div><div style="flex:1;"><div class="uname">${u.name}</div><div class="urole">${u.role} · ${(u.db||[]).length} kwitansi · ${u.pwHash?'🔒':'🔓'}</div></div>${u.id===activeUid?'<i class="ti ti-check" style="color:var(--accent);"></i>':''}</div>`).join('');}
+function openUserModal(){renderModalUserList();document.getElementById('modal-user').style.display='flex';}
+function closeModal(id){document.getElementById(id).style.display='none';}
+function updateTrialInfoBar(){
+  const bar = document.getElementById('trial-info-bar');
+  if(!bar) return;
+  if(isLicensed()||!activeUid){
+    bar.style.display='none';
+    return;
+  }
+  const used = getTotalPrints();
+  const sisa = Math.max(0, TRIAL_LIMIT - used);
+  if(sisa === 0){
+    bar.style.cssText='display:flex;margin-top:8px;padding:7px 10px;border-radius:7px;font-size:12px;align-items:center;gap:6px;background:#fdf0ef;color:#c0392b;font-weight:600;';
+    bar.innerHTML='<i class="ti ti-lock"></i> Trial habis! Aktifkan lisensi untuk membuat kwitansi baru.';
+  } else if(sisa <= 5){
+    bar.style.cssText='display:flex;margin-top:8px;padding:7px 10px;border-radius:7px;font-size:12px;align-items:center;gap:6px;background:#fff3cd;color:#856404;';
+    bar.innerHTML='<i class="ti ti-alert-triangle"></i> Sisa <strong style="margin:0 3px;">'+sisa+'</strong> simpan gratis. Segera aktifkan lisensi!';
+  } else {
+    // Trial masih banyak - sembunyikan saja, tidak perlu info bar
+    bar.style.display='none';
+  }
+}
+function updateTopbar(){const u=getUser(),cfg=getCfg();document.getElementById('sb-uname').textContent=u.name;document.getElementById('topbar-lembaga').textContent=cfg.nama||u.name;}
+function updateNo(){const tgl=document.getElementById('tgl').value;document.getElementById('no-display').value=buildNo(getCfg().kode,tgl,autoSeq(tgl));}
+function onTglChange(){updateNo();updatePreview();}
+function getCurrentNo(){return document.getElementById('no-display').value||buildNo(getCfg().kode,document.getElementById('tgl').value,autoSeq(document.getElementById('tgl').value));}
+function updatePreview(){
+  const cfg=getCfg(),tgl=document.getElementById('tgl').value;
+  const dari=document.getElementById('dari').value||'-';
+  const jumlah=document.getElementById('jumlah').value||0;
+  const keperluan=document.getElementById('keperluan').value||'-';
+  const no=getCurrentNo();
+  const cat=getCatById(selectedCat);
+  const size=cfg.size||'a5';
+  const isThermal=size==='t80'||size==='t58';
+  const box=document.getElementById('preview-box');
+  if(isThermal){
+    box.style.maxWidth=size==='t58'?'200px':'240px';
+    box.innerHTML=`<div style="text-align:center;border-bottom:1px dashed #ccc;padding-bottom:8px;margin-bottom:8px;">${logo?`<img src="${logo}" style="width:40px;height:40px;object-fit:contain;display:block;margin:0 auto 4px;" alt="Logo">`:''}<div style="font-size:13px;font-weight:600;">${cfg.nama||'Nama Lembaga'}</div>${cfg.alamat?`<div style="font-size:10px;color:var(--muted);">${cfg.alamat}</div>`:''}<div style="font-size:15px;font-weight:600;color:var(--accent);margin-top:4px;">KWITANSI</div><div style="font-size:10px;color:var(--muted);font-family:monospace;">${no}</div></div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--muted);">Tanggal</span><span>${formatTglShort(tgl)}</span></div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--muted);">Dari</span><span>${dari}</span></div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--muted);">Untuk</span><span>${keperluan}</span></div>${cat?`<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--muted);">Kategori</span><span style="color:${cat.color};">${cat.name}</span></div>`:''}<div style="border-top:1px dashed #ccc;border-bottom:1px dashed #ccc;padding:6px 0;margin:8px 0;text-align:center;"><div style="font-size:15px;font-weight:600;color:var(--accent);">${formatRp(jumlah)}</div><div style="font-size:9px;color:var(--muted);font-style:italic;">Terbilang: ${jumlah>0?terbilang(jumlah)+' rupiah':'-'}</div></div><div style="text-align:center;margin-top:12px;font-size:10px;color:var(--muted);"><div>${cfg.kota||'Jakarta'}, ${formatTglShort(tgl)}</div>${signature?`<img src="${signature}" style="height:34px;object-fit:contain;display:block;margin:8px auto 2px;">`:'<div style="border-bottom:0.5px solid #ccc;width:80px;margin:18px auto 3px;"></div>'}<div style="font-weight:600;">${cfg.ttd||'Penanda Tangan'}</div><div>${cfg.jab||''}</div></div>`;
+  }else{
+    box.style.maxWidth='';
+    const kopHtml=logo?`<div style="display:flex;align-items:center;gap:10px;"><img src="${logo}" style="width:52px;height:52px;object-fit:contain;border-radius:6px;flex-shrink:0;" alt="Logo"><div style="flex:1;"><div style="font-size:15px;font-weight:600;">${cfg.nama||'Nama Lembaga'}</div>${cfg.alamat?`<div style="font-size:11px;color:var(--muted);">${cfg.alamat}</div>`:''}</div><div style="text-align:right;"><div class="receipt-title">KWITANSI</div><div class="receipt-no">${no}</div></div></div>`:`<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div><div class="receipt-title">KWITANSI</div><div class="receipt-no">${no}</div></div><div style="text-align:right;"><strong>${cfg.nama||'Nama Lembaga'}</strong>${cfg.alamat?`<br><span style="font-size:11px;color:var(--muted);">${cfg.alamat}</span>`:''}</div></div>`;
+    box.innerHTML=`<div class="kop-line">${kopHtml}</div><div class="r-row"><span class="r-lbl">Tanggal</span><span class="r-val">${formatTgl(tgl)}</span></div><div class="r-row"><span class="r-lbl">Diterima dari</span><span class="r-val">${dari}</span></div><div class="r-row"><span class="r-lbl">Keperluan</span><span class="r-val">${keperluan}</span></div>${cat?`<div class="r-row"><span class="r-lbl">Kategori</span><span class="r-val"><span class="badge" style="background:${cat.color}22;color:${cat.color};">${cat.name}</span></span></div>`:''}<div class="amt-box"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Jumlah pembayaran</div><div class="amt-val">${formatRp(jumlah)}</div><div class="amt-words">Terbilang: ${jumlah>0?terbilang(jumlah)+' rupiah':'-'}</div></div><div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"><i class="ti ti-alert-circle"></i>Materai untuk transaksi di atas Rp 5.000.000</div><div class="sig-area"><div style="text-align:center;"><div style="font-size:11px;color:var(--muted);">${cfg.kota||'Jakarta'}, ${formatTgl(tgl)}</div>${signature?`<img src="${signature}" style="height:50px;object-fit:contain;display:block;margin:10px auto 2px;">`:'<div class="sig-line"></div>'}<div style="font-size:12px;font-weight:600;">${cfg.ttd||'Penanda Tangan'}</div><div style="font-size:11px;color:var(--muted);">${cfg.jab||''}</div></div></div>`;
+  }
+}
+function simpan(){
+  // Cek trial sebelum simpan
+  if(!isLicensed()){
+    const used=getTotalPrints();
+    if(used>=TRIAL_LIMIT){tampilkanBlokirTotal();return;}
+  }
+  const tgl=document.getElementById('tgl').value;
+  const dari=document.getElementById('dari').value.trim();
+  const jumlah=parseInt(document.getElementById('jumlah').value)||0;
+  const keperluan=document.getElementById('keperluan').value.trim();
+  const no=getCurrentNo();
+  if(!dari){showToast('Isi nama pembayar');return;}
+  if(!jumlah){showToast('Isi jumlah pembayaran');return;}
+  getDb().unshift({id:Date.now(),no,dari,jumlah,keperluan,tgl,catId:selectedCat,createdAt:new Date().toISOString()});
+  saveUsers();renderRiwayat();updateNo();
+
+  // Hitung pemakaian dari SIMPAN (bukan cetak/PDF)
+  if(!isLicensed()){
+    const n=incPrints();
+    const sisa=TRIAL_LIMIT-n;
+    if(sisa>0&&sisa<=5){
+      showToast('✅ Kwitansi '+no+' tersimpan! ⚠️ Sisa '+sisa+' pemakaian gratis.');
+    } else {
+      showToast('Kwitansi '+no+' tersimpan!');
+    }
+    if(n>=TRIAL_LIMIT){
+      setTimeout(()=>{tampilkanBlokirTotal();applyTrialBlockOverlay();},900);
+    }
+    updateTrialInfoBar();
+  } else {
+    showToast('Kwitansi '+no+' tersimpan!');
+  }
+}
+function resetInput(){['dari','jumlah','keperluan'].forEach(id=>document.getElementById(id).value='');selectedCat='';renderCatChipsInput();const t=new Date().toISOString().split('T')[0];document.getElementById('tgl').value=t;updateNo();updatePreview();}
+function exportPDF(){
+  if(!isLicensed()&&!isTrialActive()){tampilkanBlokirTotal();return;}
+  _doExportPDF();
+}
+function cetakBrowser(){
+  if(!isLicensed()&&!isTrialActive()){tampilkanBlokirTotal();return;}
+  _doCetakBrowser();
+}function _doExportPDF(){
+  const cfg=getCfg(),tgl=document.getElementById('tgl').value;
+  const dari=document.getElementById('dari').value||'-';
+  const jumlah=parseInt(document.getElementById('jumlah').value)||0;
+  const keperluan=document.getElementById('keperluan').value||'-';
+  const no=getCurrentNo();const cat=getCatById(selectedCat);
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a5'});
+  const W=148,M=15;let y=M;
+  doc.setFillColor(83,74,183);doc.rect(M,y,W-M*2,0.8,'F');y+=5;
+  doc.setFont('helvetica','bold');doc.setFontSize(18);doc.setTextColor(83,74,183);doc.text('KWITANSI',M,y);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120,120,120);doc.text(no,M,y+5);
+  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(30,30,30);doc.text(cfg.nama||'Nama Lembaga',W-M,y,{align:'right'});
+  if(cfg.alamat){doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120,120,120);doc.text(cfg.alamat,W-M,y+5,{align:'right'});}
+  y+=16;doc.setFillColor(83,74,183);doc.rect(M,y,W-M*2,0.5,'F');y+=6;
+  const rows=[['Tanggal',formatTgl(tgl)],['Diterima dari',dari],['Keperluan',keperluan]];
+  if(cat)rows.push(['Kategori',cat.name]);
+  doc.setFontSize(10);
+  rows.forEach(([l,v])=>{doc.setFont('helvetica','normal');doc.setTextColor(120,120,120);doc.text(l,M,y);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);doc.text(String(v),M+38,y);y+=7;});
+  y+=3;
+  doc.setFillColor(245,245,247);doc.roundedRect(M,y,W-M*2,22,2,2,'F');
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120,120,120);doc.text('Jumlah pembayaran',M+4,y+6);
+  doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(83,74,183);doc.text(formatRp(jumlah),M+4,y+13);
+  doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(120,120,120);doc.text('Terbilang: '+(jumlah>0?terbilang(jumlah)+' rupiah':'-'),M+4,y+19);
+  y+=28;
+  const sigX=W-M-45;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(120,120,120);doc.text((cfg.kota||'Jakarta')+', '+formatTgl(tgl),sigX,y,{align:'center'});
+  if(signature){
+    const imgW=38,imgH=16;
+    try{doc.addImage(signature,'PNG',sigX-imgW/2,y+3,imgW,imgH);}catch(e){}
+    y+=imgH+9;
+  }else{
+    y+=22;doc.setDrawColor(180,180,180);doc.line(sigX-22,y,sigX+22,y);y+=4;
+  }
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(30,30,30);doc.text(cfg.ttd||'Penanda Tangan',sigX,y,{align:'center'});
+  if(cfg.jab){doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120,120,120);doc.text(cfg.jab,sigX,y+4,{align:'center'});}
+  doc.save('Kwitansi_'+no.replace(/\//g,'-')+'.pdf');showToast('PDF berhasil diunduh');
+}
+function exportLaporanPDF(){
+  if(!isLicensed()&&!isTrialActive()){tampilkanBlokirTotal();return;}
+  const tahun=parseInt(document.getElementById('lap-tahun').value);
+  const bulan=parseInt(document.getElementById('lap-bulan').value);
+  const data=getDb().filter(d=>{if(!d.tgl)return false;const x=new Date(d.tgl);return x.getFullYear()===tahun&&(x.getMonth()+1)===bulan;});
+  const total=data.reduce((s,d)=>s+(d.jumlah||0),0);
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,M=18;let y=M;
+  const bln=['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(83,74,183);doc.text('LAPORAN KWITANSI',M,y);y+=7;
+  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(80,80,80);doc.text((getCfg().nama||'')+' · '+bln[bulan]+' '+tahun,M,y);y+=4;
+  doc.setFillColor(83,74,183);doc.rect(M,y,W-M*2,0.6,'F');y+=8;
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(30,30,30);doc.text('Total kwitansi: '+data.length,M,y);doc.text('Total nilai: '+formatRp(total),W/2,y);y+=10;
+  const cols=[['No.',15],['Nomor Kwitansi',50],['Dari',45],['Keperluan',45],['Jumlah',35]];
+  let x=M;doc.setFillColor(240,239,254);doc.rect(M,y-4,W-M*2,8,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(83,74,183);
+  cols.forEach(([h,w])=>{doc.text(h,x+1,y);x+=w;});y+=4;
+  doc.setFillColor(83,74,183);doc.rect(M,y,W-M*2,0.3,'F');y+=4;
+  doc.setFont('helvetica','normal');doc.setFontSize(8);
+  data.forEach((d,i)=>{
+    if(y>270){doc.addPage();y=M;}
+    if(i%2===0){doc.setFillColor(250,250,252);doc.rect(M,y-3,W-M*2,6,'F');}
+    doc.setTextColor(30,30,30);x=M;
+    [String(i+1),d.no,d.dari,d.keperluan||'-',formatRp(d.jumlah)].forEach((v,vi)=>{doc.text(String(v).substring(0,Math.floor(cols[vi][1]/2.2)),x+1,y);x+=cols[vi][1];});y+=6;
+  });
+  y+=4;doc.setFillColor(83,74,183);doc.rect(M,y,W-M*2,0.5,'F');y+=6;
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(83,74,183);doc.text('Total: '+formatRp(total),W-M,y,{align:'right'});
+  doc.save('Laporan_'+bln[bulan]+'_'+tahun+'.pdf');showToast('Laporan PDF diunduh');
+}
+function _doCetakBrowser(){
+  const cfg=getCfg(),tgl=document.getElementById('tgl').value;
+  const dari=document.getElementById('dari').value||'-';const jumlah=document.getElementById('jumlah').value||0;const keperluan=document.getElementById('keperluan').value||'-';
+  const no=getCurrentNo();const cat=getCatById(selectedCat);const size=cfg.size||'a5';const isThermal=size==='t80'||size==='t58';
+  const logoHtml=logo?`<img src="${logo}" style="width:${isThermal?'38px':'52px'};height:${isThermal?'38px':'52px'};object-fit:contain;" alt="Logo">`:'';
+  let body='';
+  if(isThermal){body=`<div style="text-align:center;border-bottom:1px dashed #ccc;padding-bottom:8px;margin-bottom:8px;">${logoHtml?`<div>${logoHtml}</div>`:''}<div style="font-size:13px;font-weight:700;">${cfg.nama||''}</div>${cfg.alamat?`<div style="font-size:10px;color:#888;">${cfg.alamat}</div>`:''}<div style="font-size:15px;font-weight:700;color:#534AB7;margin-top:4px;">KWITANSI</div><div style="font-size:10px;color:#888;font-family:monospace;">${no}</div></div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:#888;">Tanggal</span><span>${formatTglShort(tgl)}</span></div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:#888;">Dari</span><span>${dari}</span></div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:#888;">Untuk</span><span>${keperluan}</span></div>${cat?`<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:#888;">Kategori</span><span style="color:${cat.color};">${cat.name}</span></div>`:''}<div style="border-top:1px dashed #ccc;border-bottom:1px dashed #ccc;padding:6px 0;margin:8px 0;text-align:center;"><div style="font-size:15px;font-weight:700;color:#534AB7;">${formatRp(jumlah)}</div><div style="font-size:9px;color:#888;font-style:italic;">Terbilang: ${jumlah>0?terbilang(jumlah)+' rupiah':'-'}</div></div><div style="text-align:center;margin-top:12px;font-size:10px;color:#888;"><div>${cfg.kota||'Jakarta'}, ${formatTglShort(tgl)}</div>${signature?`<img src="${signature}" style="height:34px;object-fit:contain;display:block;margin:8px auto 2px;">`:'<div style="border-bottom:1px solid #ccc;width:80px;margin:18px auto 3px;"></div>'}<div style="font-weight:700;">${cfg.ttd||''}</div><div>${cfg.jab||''}</div></div>`;}
+  else{const kop=logo?`<div style="display:flex;align-items:center;gap:10px;">${logoHtml}<div style="flex:1;"><div style="font-size:15px;font-weight:700;">${cfg.nama||''}</div>${cfg.alamat?`<div style="font-size:11px;color:#888;">${cfg.alamat}</div>`:''}</div><div style="text-align:right;"><div style="font-size:20px;font-weight:700;color:#534AB7;">KWITANSI</div><div style="font-size:10px;color:#888;font-family:monospace;">${no}</div></div></div>`:`<div style="display:flex;justify-content:space-between;"><div><div style="font-size:20px;font-weight:700;color:#534AB7;">KWITANSI</div><div style="font-size:10px;color:#888;font-family:monospace;">${no}</div></div><div style="text-align:right;"><strong>${cfg.nama||''}</strong>${cfg.alamat?`<br><span style="font-size:11px;color:#888;">${cfg.alamat}</span>`:''}</div></div>`;body=`${kop}<hr style="border:none;border-top:2px solid #534AB7;margin:10px 0 12px;"><div style="display:flex;margin-bottom:7px;"><span style="width:135px;font-size:12px;color:#888;">Tanggal</span><span style="font-size:12px;">${formatTgl(tgl)}</span></div><div style="display:flex;margin-bottom:7px;"><span style="width:135px;font-size:12px;color:#888;">Diterima dari</span><span style="font-size:12px;">${dari}</span></div><div style="display:flex;margin-bottom:7px;"><span style="width:135px;font-size:12px;color:#888;">Keperluan</span><span style="font-size:12px;">${keperluan}</span></div>${cat?`<div style="display:flex;margin-bottom:7px;"><span style="width:135px;font-size:12px;color:#888;">Kategori</span><span style="font-size:12px;color:${cat.color};font-weight:500;">${cat.name}</span></div>`:''}<div style="background:#f5f5f7;border-radius:8px;padding:10px 12px;margin:10px 0;"><div style="font-size:11px;color:#888;margin-bottom:3px;">Jumlah pembayaran</div><div style="font-size:18px;font-weight:700;color:#534AB7;">${formatRp(jumlah)}</div><div style="font-size:10px;color:#888;font-style:italic;margin-top:2px;">Terbilang: ${jumlah>0?terbilang(jumlah)+' rupiah':'-'}</div></div><div style="display:flex;justify-content:flex-end;margin-top:14px;"><div style="text-align:center;"><div style="font-size:11px;color:#888;">${cfg.kota||'Jakarta'}, ${formatTgl(tgl)}</div>${signature?`<img src="${signature}" style="height:48px;object-fit:contain;display:block;margin:12px auto 2px;">`:'<div style="width:120px;border-bottom:1px solid #ccc;margin:28px auto 3px;"></div>'}<div style="font-size:12px;font-weight:700;">${cfg.ttd||''}</div><div style="font-size:11px;color:#888;">${cfg.jab||''}</div></div></div>`;}
+  const ps=isThermal?`@page{size:${size==='t58'?'58mm':'80mm'} auto;margin:4mm;}body{width:${size==='t58'?'58mm':'80mm'};}`:size==='a5'?`@page{size:A5 portrait;margin:18mm;}`:`@page{size:A4 portrait;margin:20mm;}`;
+  const w=window.open('','_blank');w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Kwitansi ${no}</title><style>*{box-sizing:border-box;}body{font-family:sans-serif;${isThermal?'':'max-width:500px;margin:auto;padding:1.5rem;'}}${ps}
+/* -- LISENSI -- */
+#modal-lisensi{z-index:9998;}
+.lic-header{background:linear-gradient(135deg,#3C3489,#534AB7);border-radius:10px;padding:22px 18px;text-align:center;color:#fff;margin-bottom:16px;}
+.lic-icon{font-size:36px;margin-bottom:6px;}
+.lic-trial-badge{display:inline-block;background:rgba(255,255,255,0.2);border-radius:20px;padding:2px 12px;font-size:11px;margin-bottom:8px;}
+.lic-counter{font-size:34px;font-weight:800;}
+.plan-card{border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;margin-bottom:8px;position:relative;transition:border-color 0.15s,background 0.15s;}
+.plan-card:hover,.plan-card.selected{border-color:var(--accent);background:var(--accent-light);}
+.plan-card .pname{font-size:14px;font-weight:600;}
+.plan-card .pdesc{font-size:11px;color:var(--muted);margin-top:2px;}
+.plan-card .pprice{font-size:16px;font-weight:700;color:var(--accent);margin-top:6px;}
+.plan-card .pbadge{position:absolute;top:10px;right:10px;background:var(--accent);color:#fff;font-size:10px;padding:2px 8px;border-radius:20px;}
+.lic-steps{background:#f5f5f7;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;}
+.lic-steps ol{padding-left:16px;}
+.lic-steps li{margin-bottom:3px;line-height:1.5;color:#444;}
+.lic-key-row{display:flex;gap:8px;margin-bottom:8px;}
+.lic-key-row input{flex:1;font-family:monospace;text-transform:uppercase;letter-spacing:1px;}
+.lic-err{font-size:12px;color:var(--danger);display:none;margin-bottom:6px;}
+.lic-ok{background:#e8f8f0;border:1px solid #a8dfc0;border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.lic-ok i{color:#1a7a45;font-size:20px;}
+.trial-topbar-badge{font-size:10px;padding:2px 8px;border-radius:20px;cursor:pointer;margin-left:8px;font-weight:500;}
+</style></head><body>${body}
+<!-- MODAL LISENSI -->
+<div class="modal-bg" id="modal-lisensi" style="display:none;">
+  <div class="modal" style="max-width:480px;">
+    <!-- VIEW: TRIAL HABIS -->
+    <div id="lic-trial-view">
+      <div class="lic-header">
+        <div class="lic-icon">🔐</div>
+        <div class="lic-trial-badge">Trial Habis</div>
+        <div style="font-size:17px;font-weight:700;margin-bottom:4px;">Aktifkan Lisensi KwitansiPro</div>
+        <div style="font-size:12px;opacity:0.85;">Anda telah menggunakan <strong id="lic-used">15</strong> cetak gratis.<br>Aktifkan lisensi untuk melanjutkan tanpa batas.</div>
+      </div>
+      <!-- PILIH PAKET -->
+      <div class="plan-card selected" data-plan="basic" data-price="50000" onclick="pilihPaket(this)">
+        <div class="pname">Lisensi Basic</div>
+        <div class="pdesc">1 pengguna · Cetak & PDF unlimited · Kategori & Riwayat</div>
+        <div class="pprice">Rp 50.000 <span style="font-size:11px;font-weight:400;color:var(--muted);">/ selamanya</span></div>
+      </div>
+      <div class="plan-card" data-plan="pro" data-price="100000" onclick="pilihPaket(this)">
+        <div class="pname">Lisensi Pro</div>
+        <div class="pdesc">Multi-user · Laporan PDF · Tanda tangan digital · Backup data</div>
+        <div class="pprice">Rp 100.000 <span style="font-size:11px;font-weight:400;color:var(--muted);">/ selamanya</span></div>
+        <div class="pbadge">Terpopuler</div>
+      </div>
+      <!-- CARA BAYAR -->
+      <div class="lic-steps">
+        <div style="font-weight:600;margin-bottom:6px;"><i class="ti ti-info-circle"></i> Cara aktivasi:</div>
+        <ol>
+          <li>Pilih paket, klik <strong>"Bayar via Lynk.id"</strong></li>
+          <li>Selesaikan pembayaran QRIS atas nama <strong>Una Digital Solution</strong></li>
+          <li>Klik <strong>"Sudah Bayar? Konfirmasi ke Admin"</strong> &amp; kirim bukti bayar</li>
+          <li>Admin kirim kunci lisensi &rarr; masukkan di kolom bawah &rarr; klik Aktivasi</li>
+        </ol>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:8px;padding:10px;font-size:14px;" onclick="bayarMidtrans()">
+        <i class="ti ti-credit-card"></i> Bayar via Lynk.id (QRIS/Transfer)
+      </button>
+      <button class="btn btn-outline" style="width:100%;margin-bottom:10px;padding:9px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;" onclick="konfirmasiWA()">
+        <i class="ti ti-brand-whatsapp" style="color:#25D366;"></i> Sudah Bayar? Konfirmasi ke Admin
+      </button>
+      <div style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:10px;">- atau masukkan kunci lisensi -</div>
+      <div class="lic-key-row">
+        <input type="text" id="lic-key-input" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19"/>
+        <button class="btn btn-outline" id="btn-aktivasi" onclick="aktivasiLisensi()"><i class="ti ti-check"></i> Aktivasi</button>
+      </div>
+      <div class="lic-err" id="lic-err"></div>
+      <div style="text-align:center;">
+        <button class="btn btn-ghost" style="font-size:11px;color:var(--muted);" onclick="document.getElementById('modal-lisensi').style.display='none'">Tutup (cetak diblokir sampai lisensi aktif)</button>
+      </div>
+    </div>
+    <!-- VIEW: SUKSES -->
+    <div id="lic-success-view" style="display:none;">
+      <div class="lic-ok">
+        <i class="ti ti-circle-check"></i>
+        <div>
+          <div style="font-weight:600;font-size:14px;">Lisensi Aktif!</div>
+          <div style="font-size:12px;margin-top:2px;" id="lic-success-msg">Terima kasih telah mengaktifkan KwitansiPro.</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="document.getElementById('modal-lisensi').style.display='none'"><i class="ti ti-check"></i> Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+</body></html>`);w.document.close();w.print();
+}
+function renderRiwayat(){
+  const db=getDb();const q=(document.getElementById('search-input').value||'').toLowerCase();const fc=document.getElementById('filter-cat').value;const fb=document.getElementById('filter-bulan').value;
+  let data=db.filter(d=>{const mQ=!q||(d.dari||'').toLowerCase().includes(q)||(d.no||'').toLowerCase().includes(q)||(d.keperluan||'').toLowerCase().includes(q);const mC=!fc||d.catId===fc;const mB=!fb||(d.tgl&&d.tgl.startsWith(fb));return mQ&&mC&&mB;});
+  const tot=db.reduce((s,d)=>s+(d.jumlah||0),0);const now=new Date(),ym=now.getFullYear()+'-'+pad(now.getMonth()+1,2);const bIni=db.filter(d=>d.tgl&&d.tgl.startsWith(ym));
+  document.getElementById('stat-grid').innerHTML=[['Total kwitansi',db.length,'ti-receipt'],['Total nilai',db.length?formatRp(tot):'-','ti-cash'],['Bulan ini',bIni.length+' kwitansi','ti-calendar'],['Nilai bulan ini',bIni.length?formatRp(bIni.reduce((s,d)=>s+(d.jumlah||0),0)):'-','ti-trending-up']].map(([l,v,ic])=>`<div class="stat-card"><div class="stat-label"><i class="ti ${ic}"></i> ${l}</div><div class="stat-val" style="font-size:16px;">${v}</div></div>`).join('');
+  const months=[...new Set(db.map(d=>d.tgl?d.tgl.substring(0,7):null).filter(Boolean))].sort().reverse();const fb2=document.getElementById('filter-bulan').value;document.getElementById('filter-bulan').innerHTML='<option value="">Semua bulan</option>'+months.map(m=>`<option value="${m}"${m===fb2?'selected':''}>${m}</option>`).join('');
+  const tbody=document.getElementById('riwayat-tbody');
+  if(data.length===0){tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted);">Tidak ada data</td></tr>`;return;}
+  tbody.innerHTML=data.map(d=>{const cat=getCatById(d.catId);return`<tr><td class="mono">${d.no}</td><td style="font-weight:500;">${d.dari||'-'}</td><td style="color:var(--muted);">${(d.keperluan||'-').substring(0,28)}</td><td>${cat?`<span class="badge" style="background:${cat.color}22;color:${cat.color};">${cat.name}</span>`:''}</td><td style="font-weight:500;color:var(--accent);">${formatRp(d.jumlah)}</td><td style="color:var(--muted);">${formatTglShort(d.tgl)}</td><td><button class="btn btn-danger" onclick="delKwt(${d.id})"><i class="ti ti-trash"></i></button></td></tr>`;}).join('');
+}
+function delKwt(id){const u=getUser();u.db=u.db.filter(x=>x.id!==id);saveUsers();renderRiwayat();showToast('Kwitansi dihapus');}
+function initLaporan(){
+  const now=new Date();const tyear=document.getElementById('lap-tahun');const tbulan=document.getElementById('lap-bulan');
+  const years=[...new Set(getDb().map(d=>d.tgl?new Date(d.tgl).getFullYear():null).filter(Boolean))];if(!years.includes(now.getFullYear()))years.unshift(now.getFullYear());years.sort((a,b)=>b-a);
+  tyear.innerHTML=years.map(y=>`<option value="${y}"${y===now.getFullYear()?'selected':''}>${y}</option>`).join('');
+  const months=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  tbulan.innerHTML=months.map((m,i)=>`<option value="${i+1}"${i+1===now.getMonth()+1?'selected':''}>${m}</option>`).join('');
+  renderLaporan();
+}
+function renderLaporan(){
+  const db=getDb();const tahun=parseInt(document.getElementById('lap-tahun').value)||new Date().getFullYear();const bulan=parseInt(document.getElementById('lap-bulan').value)||new Date().getMonth()+1;
+  const data=db.filter(d=>{if(!d.tgl)return false;const x=new Date(d.tgl);return x.getFullYear()===tahun&&(x.getMonth()+1)===bulan;});
+  const total=data.reduce((s,d)=>s+(d.jumlah||0),0);
+  const prev=db.filter(d=>{if(!d.tgl)return false;const x=new Date(d.tgl);let pm=bulan-1,py=tahun;if(pm===0){pm=12;py--;}return x.getFullYear()===py&&(x.getMonth()+1)===pm;});
+  const prevTotal=prev.reduce((s,d)=>s+(d.jumlah||0),0);const diff=prevTotal?Math.round((total-prevTotal)/prevTotal*100):0;
+  document.getElementById('lap-stats').innerHTML=[['Kwitansi bulan ini',data.length+' transaksi','ti-receipt'],['Total nilai',formatRp(total),'ti-cash'],['Rata-rata',data.length?formatRp(Math.round(total/data.length)):'-','ti-chart-line'],['vs bulan lalu',(diff>=0?'+':'')+diff+'%','ti-trending-up']].map(([l,v,ic])=>`<div class="stat-card"><div class="stat-label"><i class="ti ${ic}"></i> ${l}</div><div class="stat-val" style="font-size:15px;">${v}</div></div>`).join('');
+  const chartEl=document.getElementById('lap-chart');const months2=[];for(let i=5;i>=0;i--){let m=bulan-i,y=tahun;while(m<=0){m+=12;y--;}months2.push({m,y});}
+  const maxV=Math.max(1,...months2.map(({m,y})=>db.filter(d=>{if(!d.tgl)return false;const x=new Date(d.tgl);return x.getFullYear()===y&&(x.getMonth()+1)===m;}).reduce((s,d)=>s+(d.jumlah||0),0)));
+  const mn=['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  chartEl.innerHTML=months2.map(({m,y})=>{const v=db.filter(d=>{if(!d.tgl)return false;const x=new Date(d.tgl);return x.getFullYear()===y&&(x.getMonth()+1)===m;}).reduce((s,d)=>s+(d.jumlah||0),0);const h=Math.max(3,Math.round(v/maxV*80));const isActive=m===bulan&&y===tahun;return`<div class="bar-col"><div class="bar-val">${v>=1e6?(v/1e6).toFixed(1)+'jt':v>=1000?Math.round(v/1000)+'rb':v||''}</div><div class="bar" style="height:${h}px;background:${isActive?'var(--accent)':'var(--accent-light)'};"></div><div class="bar-label">${mn[m]}</div></div>`;}).join('');
+  const cats=getCats();const catSum=cats.map(c=>{const items=data.filter(d=>d.catId===c.id);return{...c,count:items.length,total:items.reduce((s,d)=>s+(d.jumlah||0),0)};}).filter(c=>c.count>0).sort((a,b)=>b.total-a.total);const maxCat=Math.max(1,...catSum.map(c=>c.total));
+  document.getElementById('lap-cat').innerHTML=catSum.length?catSum.map(c=>`<div class="cat-row"><div class="cat-dot" style="background:${c.color};"></div><div class="cat-name">${c.name}</div><span class="cat-count">${c.count}x</span><span class="cat-amt">${formatRp(c.total)}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${Math.round(c.total/maxCat*100)}%;background:${c.color};"></div></div>`).join(''):'<div style="color:var(--muted);font-size:13px;padding:8px 0;">Tidak ada data kategori</div>';
+  document.getElementById('lap-tbody').innerHTML=data.length?data.map(d=>{const cat=getCatById(d.catId);return`<tr><td class="mono">${d.no}</td><td>${d.dari||'-'}</td><td>${cat?`<span class="badge" style="background:${cat.color}22;color:${cat.color};">${cat.name}</span>`:''}</td><td style="font-weight:500;color:var(--accent);">${formatRp(d.jumlah)}</td></tr>`;}).join(''):`<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--muted);">Tidak ada kwitansi pada bulan ini</td></tr>`;
+}
+const panelTitles={input:'Buat Kwitansi',riwayat:'Riwayat',laporan:'Laporan Bulanan',pengaturan:'Pengaturan',users:'Manajemen Pengguna'};
+function nav(id,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('panel-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));if(el)el.classList.add('active');
+  document.getElementById('topbar-title').textContent=panelTitles[id]||id;
+  if(id==='riwayat')renderRiwayat();if(id==='laporan')initLaporan();if(id==='pengaturan')loadSettingsUI();if(id==='users')renderUserListMain();
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+// helper needed before login
+const pad=(n,l)=>n.toString().padStart(l,'0');
+const formatRp=n=>'Rp '+(parseInt(n)||0).toLocaleString('id-ID');
+const formatTgl=v=>{if(!v)return'-';const d=new Date(v);return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});};
+const formatTglShort=v=>{if(!v)return'-';const d=new Date(v);return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});};
+function buildNo(kode,tgl,seq){const k=kode||'XXX';const d=tgl?new Date(tgl):new Date();return`${k}/KWT/${d.getFullYear()}/${pad(d.getMonth()+1,2)}/${pad(seq,3)}`;}
+function autoSeq(tgl){const db=getDb();if(!tgl)return db.length+1;const d=new Date(tgl);const y=d.getFullYear(),m=d.getMonth()+1;return db.filter(x=>{if(!x.tgl)return false;const xd=new Date(x.tgl);return xd.getFullYear()===y&&(xd.getMonth()+1)===m;}).length+1;}
+const s1=['','satu','dua','tiga','empat','lima','enam','tujuh','delapan','sembilan'];
+const s2=['sepuluh','sebelas','dua belas','tiga belas','empat belas','lima belas','enam belas','tujuh belas','delapan belas','sembilan belas'];
+const s3=['','','dua puluh','tiga puluh','empat puluh','lima puluh','enam puluh','tujuh puluh','delapan puluh','sembilan puluh'];
+function terbilang(n){n=parseInt(n);if(isNaN(n)||n===0)return'nol';if(n<0)return'minus '+terbilang(-n);if(n<10)return s1[n];if(n<20)return s2[n-10];if(n<100)return s3[Math.floor(n/10)]+(n%10?' '+s1[n%10]:'');if(n<200)return'seratus'+(n%100?' '+terbilang(n%100):'');if(n<1000)return s1[Math.floor(n/100)]+' ratus'+(n%100?' '+terbilang(n%100):'');if(n<2000)return'seribu'+(n%1000?' '+terbilang(n%1000):'');if(n<1e6)return terbilang(Math.floor(n/1000))+' ribu'+(n%1000?' '+terbilang(n%1000):'');if(n<1e9)return terbilang(Math.floor(n/1e6))+' juta'+(n%1e6?' '+terbilang(n%1e6):'');return terbilang(Math.floor(n/1e9))+' miliar'+(n%1e9?' '+terbilang(n%1e9):'');}
+initData();
+renderLoginUserList();
+
+// ==========================================
+// FIREBASE CONFIG - ganti dengan config Anda
+// ==========================================
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyC7Q-5jBBobp2210s0SpuYnzcXn-HmAHiA",
+  authDomain: "kwitansi-digital-65e22.firebaseapp.com",
+  projectId: "kwitansi-digital-65e22",
+  storageBucket: "kwitansi-digital-65e22.firebasestorage.app",
+  messagingSenderId: "630522815401",
+  appId: "1:630522815401:web:6421ce4718e46eed85dab8",
+  measurementId: "G-KPMLP2P8HH"
+};
+let _db = null;
+function getFirestore(){
+  if(_db) return _db;
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    _db = firebase.firestore();
+  }catch(e){console.warn('Firebase tidak terhubung:',e);}
+  return _db;
+}
+
+// -- MIDTRANS --
+const WA_ADMIN = '6289529208532';
+const LYNK_URL = 'http://lynk.id/2079407885/oeyd8gy4jk30/checkout';
+
+// -- TRIAL SETTINGS --
+const TRIAL_LIMIT = 15;
+
+// -- LISENSI HELPERS --
+function getLicLocal(){try{return JSON.parse(localStorage.getItem('kwtp_lic')||'null');}catch{return null;}}
+function setLicLocal(d){localStorage.setItem('kwtp_lic',JSON.stringify(d));}
+function isLicensed(){const l=getLicLocal();return l&&l.activated===true;}
+function getLicPlan(){const l=getLicLocal();return l&&l.plan||null;}
+
+function getTotalPrints(){return parseInt(localStorage.getItem('kwtp_prints')||'0');}
+function incPrints(){const n=getTotalPrints()+1;localStorage.setItem('kwtp_prints',n);return n;}
+
+// -- CEK APAKAH TRIAL MASIH AKTIF --
+function isTrialActive(){return isLicensed()||getTotalPrints()<TRIAL_LIMIT;}
+
+// -- TAMPILKAN OVERLAY BLOKIR SEMUA FITUR --
+function tampilkanBlokirTotal(){
+  document.getElementById('lic-used').textContent=getTotalPrints();
+  document.getElementById('lic-trial-view').style.display='block';
+  document.getElementById('lic-success-view').style.display='none';
+  document.getElementById('lic-err').style.display='none';
+  document.getElementById('lic-key-input').value='';
+  document.getElementById('modal-lisensi').style.display='flex';
+}
+
+// -- INTERCEPT NAV: BLOKIR SEMUA KECUALI BELI LISENSI JIKA TRIAL HABIS --
+// Pengaturan & Pengguna selalu bisa diakses meskipun trial habis
+const FREE_PANELS = ['pengaturan','users'];
+function navGuarded(id,el){
+  // Panel bebas: selalu bisa diakses & tutup modal jika terbuka
+  if(FREE_PANELS.includes(id)){
+    document.getElementById('modal-lisensi').style.display='none';
+    nav(id,el);
+    return;
+  }
+  // Panel terkunci: blokir jika trial habis
+  if(!isLicensed()&&!isTrialActive()){
+    tampilkanBlokirTotal();
+    return;
+  }
+  nav(id,el);
+}
+
+// -- DEVICE FINGERPRINT (sederhana) --
+function getDeviceId(){
+  let id=localStorage.getItem('kwtp_device_id');
+  if(!id){
+    id='dev_'+Math.random().toString(36).substr(2,9)+'_'+Date.now().toString(36);
+    localStorage.setItem('kwtp_device_id',id);
+  }
+  return id;
+}
+
+// -- PILIH PAKET --
+let _selectedPlan='basic', _selectedPrice=50000;
+function pilihPaket(el){
+  document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  _selectedPlan=el.dataset.plan;
+  _selectedPrice=parseInt(el.dataset.price);
+}
+
+// -- BUKA MIDTRANS --
+function bayarMidtrans(){
+  window.open(LYNK_URL,'_blank');
+  showToast('Membuka halaman pembayaran Lynk.id...');
+}
+function konfirmasiWA(){
+  const planLabel=_selectedPlan==='pro'?'Pro':'Basic';
+  const harga=_selectedPlan==='pro'?'Rp 100.000':'Rp 50.000';
+  const devId=getDeviceId();
+  const pesan=
+    `Halo Admin Una Digital Solution,\n\n`+
+    `Saya sudah melakukan pembayaran *KwitansiPro Lisensi ${planLabel}* (${harga}).\n\n`+
+    `Device ID: ${devId}\n\n`+
+    `Mohon dikirimkan kunci lisensinya. Terima kasih`;
+  const url=`https://wa.me/${WA_ADMIN}?text=${encodeURIComponent(pesan)}`;
+  window.open(url,'_blank');
+  showToast('Membuka WhatsApp Admin...');
+}
+
+// -- FORMAT KUNCI --
+function formatLicKeyInput(){
+  const inp=document.getElementById('lic-key-input');
+  let v=inp.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+  // insert dash setiap 4 char
+  v=v.match(/.{1,4}/g)?.join('-')||v;
+  inp.value=v.substr(0,19);
+}
+
+// -- AKTIVASI LISENSI via Firebase --
+async function aktivasiLisensi(){
+  const key=document.getElementById('lic-key-input').value.trim().toUpperCase();
+  const errEl=document.getElementById('lic-err');
+  const btnAkt=document.getElementById('btn-aktivasi');
+  errEl.style.display='none';
+
+  if(key.length<10){errEl.textContent='Masukkan kunci lisensi yang valid.';errEl.style.display='block';return;}
+
+  btnAkt.disabled=true;
+  btnAkt.innerHTML='<i class="ti ti-loader ti-spin"></i> Memeriksa...';
+
+  try{
+    const db=getFirestore();
+    if(!db) throw new Error('Firebase tidak terhubung. Periksa konfigurasi.');
+
+    const snap=await db.collection('licenses').doc(key).get();
+
+    if(!snap.exists){
+      throw new Error('Kunci lisensi tidak ditemukan. Pastikan kunci benar.');
+    }
+
+    const data=snap.data();
+
+    // Cek sudah digunakan device lain?
+    if(data.activated && data.deviceId && data.deviceId!==getDeviceId()){
+      throw new Error('Kunci ini sudah diaktifkan di perangkat lain. Hubungi Una Digital Solution.');
+    }
+
+    // Cek plan valid
+    if(!['basic','pro'].includes(data.plan)){
+      throw new Error('Tipe lisensi tidak dikenal.');
+    }
+
+    // Tandai sebagai aktif di Firestore
+    if(!data.activated){
+      await db.collection('licenses').doc(key).update({
+        activated: true,
+        deviceId: getDeviceId(),
+        activatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    // Simpan lokal
+    const licData={activated:true, plan:data.plan, key:key, deviceId:getDeviceId(), activatedAt:new Date().toISOString()};
+    setLicLocal(licData);
+
+    // Tampilkan sukses
+    document.getElementById('lic-trial-view').style.display='none';
+    document.getElementById('lic-success-view').style.display='block';
+    document.getElementById('lic-success-msg').textContent=
+      `Lisensi ${data.plan.toUpperCase()} berhasil diaktifkan. Nikmati KwitansiPro tanpa batas!`;
+
+    updateLicBadge();
+    showToast('🎉 Lisensi berhasil diaktifkan!');
+
+  } catch(e){
+    errEl.textContent=e.message||'Terjadi kesalahan. Coba lagi.';
+    errEl.style.display='block';
+  } finally{
+    btnAkt.disabled=false;
+    btnAkt.innerHTML='<i class="ti ti-check"></i> Aktivasi';
+  }
+}
+
+// -- CEK LISENSI SEBELUM CETAK/EXPORT --
+function cekLisensiLaluJalankan(action){
+  if(isLicensed()){action();return;}
+  // Cek apakah trial masih tersedia
+  const used=getTotalPrints();
+  if(used>=TRIAL_LIMIT){
+    // Trial sudah habis - blokir semua
+    tampilkanBlokirTotal();
+    return;
+  }
+  // Masih dalam trial - jalankan aksi dan catat
+  const n=incPrints();
+  action();
+  const sisa=TRIAL_LIMIT-n;
+  if(sisa<=5&&sisa>0) showToast(`⚠️ Sisa ${sisa} pemakaian gratis. Aktifkan lisensi sebelum habis.`);
+  if(n>=TRIAL_LIMIT){
+    // Baru saja mencapai batas - tampilkan modal setelah aksi selesai
+    setTimeout(()=>{
+      tampilkanBlokirTotal();
+      applyTrialBlockOverlay();
+    },900);
+  }
+  updateLicBadge();
+  updateTrialInfoBar();
+}
+
+// -- TERAPKAN OVERLAY BLOKIR DI SELURUH APP --
+function applyTrialBlockOverlay(){
+  if(isLicensed()||isTrialActive()) return;
+  // Tampilkan tombol lisensi di sidebar
+  const sidebarLicBtn=document.getElementById('sidebar-lic-btn');
+  if(sidebarLicBtn) sidebarLicBtn.style.display='flex';
+  // Nonaktifkan nav kecuali: lisensi, pengaturan, pengguna
+  document.querySelectorAll('.nav-item').forEach(btn=>{
+    const oc = btn.getAttribute('onclick')||'';
+    const isFree = oc.includes('lisensi') || oc.includes("'pengaturan'") || oc.includes("'users'") || oc.includes('tampilkanBlokirTotal') || oc.includes('logout');
+    if(!isFree){
+      btn.style.opacity='0.35';
+      btn.style.pointerEvents='none';
+    }
+  });
+  // Tambahkan banner blokir di topbar
+  const old=document.getElementById('trial-block-banner');
+  if(old) old.remove();
+  const banner=document.createElement('div');
+  banner.id='trial-block-banner';
+  banner.style.cssText='position:fixed;top:0;left:0;right:0;background:#c0392b;color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;z-index:9990;display:flex;align-items:center;justify-content:center;gap:12px;';
+  banner.innerHTML=`<i class="ti ti-lock"></i> Trial habis. Pembuatan kwitansi dinonaktifkan. 
+    <button onclick="tampilkanBlokirTotal()" style="background:#fff;color:#c0392b;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;">Aktifkan Lisensi</button>`;
+  document.body.prepend(banner);
+}
+
+// -- UPDATE BADGE TOPBAR --
+function updateLicBadge(){
+  // hapus badge lama
+  const old=document.getElementById('lic-topbar-badge');
+  if(old)old.remove();
+
+  const actions=document.querySelector('.topbar-actions');
+  if(!actions)return;
+
+  const b=document.createElement('span');
+  b.id='lic-topbar-badge';
+  b.className='trial-topbar-badge';
+
+  if(isLicensed()){
+    const plan=getLicPlan()||'basic';
+    b.style.cssText='background:#e8f8f0;color:#1a7a45;';
+    b.innerHTML=`<i class="ti ti-license"></i> Lisensi ${plan.toUpperCase()} Aktif`;
+  } else {
+    const used=getTotalPrints();
+    const sisa=Math.max(0,TRIAL_LIMIT-used);
+    if(sisa===0){
+      // Trial habis - tampilkan badge merah
+      b.style.cssText='background:#fdf0ef;color:var(--danger);font-weight:700;';
+      b.innerHTML=`<i class="ti ti-lock"></i> Trial Habis`;
+      b.onclick=()=>tampilkanBlokirTotal();
+      setTimeout(()=>applyTrialBlockOverlay(),100);
+    } else {
+      // Masih trial - TIDAK tampilkan badge sama sekali
+      return; // jangan tambahkan badge apapun
+    }
+  }
+  actions.appendChild(b);
+}
+
+// -- PRO FEATURE GATE --
+function isPro(){return getLicPlan()==='pro';}
+function requirePro(featureName){
+  if(isPro()||isLicensed()===false) return true; // basic juga bisa jika belum trial habis
+  // Jika licensed tapi basic, blokir fitur Pro
+  if(isLicensed()&&!isPro()){
+    showToast(`🔒 ${featureName} hanya tersedia di Lisensi Pro (Rp 100.000)`);
+    setTimeout(()=>{
+      document.getElementById('lic-trial-view').style.display='block';
+      document.getElementById('lic-success-view').style.display='none';
+      document.getElementById('modal-lisensi').style.display='flex';
+    },400);
+    return false;
+  }
+  return true;
+}
+
+// -- FUNGSI TUTUP MODAL LISENSI --
+function tutupModalLisensi(){
+  document.getElementById('modal-lisensi').style.display='none';
+}
+
+// -- INPUT FORMAT KUNCI --
+document.addEventListener('DOMContentLoaded',()=>{
+  const inp=document.getElementById('lic-key-input');
+  if(inp) inp.addEventListener('input',formatLicKeyInput);
+  updateLicBadge();
+  // updateTrialInfoBar() dipanggil setelah login di doLoginAs(), bukan di sini
+});
+
+</script>
+
+<!-- MODAL LISENSI -->
+<div class="modal-bg" id="modal-lisensi" style="display:none;">
+  <div class="modal" style="max-width:480px;">
+    <!-- VIEW: TRIAL HABIS -->
+    <div id="lic-trial-view">
+      <div class="lic-header">
+        <div class="lic-icon">🔐</div>
+        <div class="lic-trial-badge">Trial Habis</div>
+        <div style="font-size:17px;font-weight:700;margin-bottom:4px;">Aktifkan Lisensi KwitansiPro</div>
+        <div style="font-size:12px;opacity:0.85;">Anda telah menggunakan <strong id="lic-used">15</strong> cetak gratis.<br>Aktifkan lisensi untuk melanjutkan tanpa batas.</div>
+      </div>
+      <!-- PILIH PAKET -->
+      <div class="plan-card selected" data-plan="basic" data-price="50000" onclick="pilihPaket(this)">
+        <div class="pname">Lisensi Basic</div>
+        <div class="pdesc">1 pengguna · Cetak & PDF unlimited · Kategori & Riwayat</div>
+        <div class="pprice">Rp 50.000 <span style="font-size:11px;font-weight:400;color:var(--muted);">/ selamanya</span></div>
+      </div>
+      <div class="plan-card" data-plan="pro" data-price="100000" onclick="pilihPaket(this)">
+        <div class="pname">Lisensi Pro</div>
+        <div class="pdesc">Multi-user · Laporan PDF · Tanda tangan digital · Backup data</div>
+        <div class="pprice">Rp 100.000 <span style="font-size:11px;font-weight:400;color:var(--muted);">/ selamanya</span></div>
+        <div class="pbadge">Terpopuler</div>
+      </div>
+      <!-- CARA BAYAR -->
+      <div class="lic-steps">
+        <div style="font-weight:600;margin-bottom:6px;"><i class="ti ti-info-circle"></i> Cara aktivasi:</div>
+        <ol>
+          <li>Pilih paket, klik <strong>"Bayar via Lynk.id"</strong></li>
+          <li>Selesaikan pembayaran QRIS atas nama <strong>Una Digital Solution</strong></li>
+          <li>Klik <strong>"Sudah Bayar? Konfirmasi ke Admin"</strong> &amp; kirim bukti bayar</li>
+          <li>Admin kirim kunci lisensi &rarr; masukkan di kolom bawah &rarr; klik Aktivasi</li>
+        </ol>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:8px;padding:10px;font-size:14px;" onclick="bayarMidtrans()">
+        <i class="ti ti-credit-card"></i> Bayar via Lynk.id (QRIS/Transfer)
+      </button>
+      <button class="btn btn-outline" style="width:100%;margin-bottom:10px;padding:9px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;" onclick="konfirmasiWA()">
+        <i class="ti ti-brand-whatsapp" style="color:#25D366;"></i> Sudah Bayar? Konfirmasi ke Admin
+      </button>
+      <div style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:10px;">— atau masukkan kunci lisensi —</div>
+      <div class="lic-key-row">
+        <input type="text" id="lic-key-input" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19"/>
+        <button class="btn btn-outline" id="btn-aktivasi" onclick="aktivasiLisensi()"><i class="ti ti-check"></i> Aktivasi</button>
+      </div>
+      <div class="lic-err" id="lic-err"></div>
+      <div style="text-align:center;">
+        <button class="btn btn-ghost" id="btn-tutup-modal" style="font-size:11px;color:var(--muted);" onclick="tutupModalLisensi()">Tutup (semua fungsi diblokir sampai lisensi aktif)</button>
+      </div>
+    </div>
+    <!-- VIEW: SUKSES -->
+    <div id="lic-success-view" style="display:none;">
+      <div class="lic-ok">
+        <i class="ti ti-circle-check"></i>
+        <div>
+          <div style="font-weight:600;font-size:14px;">Lisensi Aktif!</div>
+          <div style="font-size:12px;margin-top:2px;" id="lic-success-msg">Terima kasih telah mengaktifkan KwitansiPro.</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="document.getElementById('modal-lisensi').style.display='none'"><i class="ti ti-check"></i> Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
